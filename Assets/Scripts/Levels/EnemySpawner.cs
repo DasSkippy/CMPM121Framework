@@ -42,18 +42,6 @@ public class EnemySpawner : MonoBehaviour
         StartCoroutine(SpawnWave());
     }
 
-    public void SpawnButtons(string[] difficulties)
-    {
-        int index = 1;
-        foreach(string difficulty in difficulties)
-        {
-            GameObject selector = Instantiate(button, level_selector.transform);
-            selector.transform.localPosition = new Vector3(0, (130 - 50 * index));
-            selector.GetComponent<MenuSelectorController>().spawner = this;
-            selector.GetComponent<MenuSelectorController>().SetLevel(difficulty);
-            index++;
-        }
-    }
 
     IEnumerator SpawnWave()
     {
