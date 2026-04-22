@@ -13,18 +13,40 @@ public class Enemy
     int damage;
 }
 
+[System.Serializable]
+public class Level
+{
+    string name;
+    int waves;
+    Spawn[] spawns;
+}
+
+[System.Serializable]
+public class Spawn
+{
+    string enemy;
+    int count;
+    int hp;
+    int delay;
+    int[] sequence;
+    string location;
+}
+
 public class Enemies : MonoBehaviour
 {
-    static TextAsset file = Resources.Load<TextAsset>("enemies");
-    string json = file.text;
+    static TextAsset enemiesFile = Resources.Load<TextAsset>("enemies");
+    string enemiesJson = enemiesFile.text;
+    static TextAsset levelsFile = Resources.Load<TextAsset>("levels");
+    string levelsJson = levelsFile.text;
 
     public List<Enemy> enemies;
+    public List<Level> levels;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        enemies = JsonConvert.DeserializeObject<List<Enemy>>(json);
-        
+        enemies = JsonConvert.DeserializeObject<List<Enemy>>(enemiesJson);
+        levels = JsonConvert.DeserializeObject<List<Level>>(levelsJson);
     }
 
     // Update is called once per frame
