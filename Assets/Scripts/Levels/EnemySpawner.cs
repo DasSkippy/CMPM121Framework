@@ -6,13 +6,46 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using System.Collections;
 using System.Linq;
+using RPNEvaluator;
 
-public class EnemySpawner : MonoBehaviour
+[System.Serializable]
+public class Enemy
+{
+    public string name;
+    public int hp;
+    public int speed;
+    public int damage;
+}
+
+[System.Serializable]
+public class Level
+{
+    public string name;
+    public int waves;
+    public List<Spawn> spawns;
+}
+
+[System.Serializable]
+public class Spawn
+{
+    public string enemy;
+    public string count;
+    public string hp;
+    public int[] sequence;
+    public string location;
+}
+
+    public class EnemySpawner : MonoBehaviour
 {
     public Image level_selector;
     public GameObject button;
     public GameObject enemy;
-    public SpawnPoint[] SpawnPoints;    
+    public SpawnPoint[] SpawnPoints;
+
+    public List<Enemy> enemies;
+    public List<Level> levels;
+
+    Level currentLevel;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -21,6 +54,15 @@ public class EnemySpawner : MonoBehaviour
         selector.transform.localPosition = new Vector3(0, 130);
         selector.GetComponent<MenuSelectorController>().spawner = this;
         selector.GetComponent<MenuSelectorController>().SetLevel("Start");
+
+        TextAsset enemiesFile = Resources.Load<TextAsset>("enemies");
+        string enemiesJson = enemiesFile.text;
+        TextAsset levelsFile = Resources.Load<TextAsset>("levels");
+        string levelsJson = levelsFile.text;
+
+        enemies = JsonConvert.DeserializeObject<List<Enemy>>(enemiesJson);
+        levels = JsonConvert.DeserializeObject<List<Level>>(levelsJson);
+        SpawnButtons();
     }
 
     // Update is called once per frame
@@ -29,9 +71,38 @@ public class EnemySpawner : MonoBehaviour
         
     }
 
+    private void SpawnButtons()
+    {
+        string[] difficulties = new string[levels.Count];
+        int i = 0;
+        foreach (Level level in levels)
+        {
+            difficulties[i] = level.name;
+            i++;
+        }
+
+        int index = 1;
+        foreach (string difficulty in difficulties)
+        {
+            GameObject selector = Instantiate(button, level_selector.transform);
+            selector.transform.localPosition = new Vector3(0, (130 - 50 * index));
+            selector.GetComponent<MenuSelectorController>().spawner = this;
+            selector.GetComponent<MenuSelectorController>().SetLevel(difficulty);
+            index++;
+        }
+    }
+
     public void StartLevel(string levelname)
     {
         level_selector.gameObject.SetActive(false);
+        foreach (Level level in levels)
+        {
+            if(level.name == levelname)
+            {
+                currentLevel = level;
+                break;
+            }
+        }
         // this is not nice: we should not have to be required to tell the player directly that the level is starting
         GameManager.Instance.player.GetComponent<PlayerController>().StartLevel();
         StartCoroutine(SpawnWave());
@@ -42,18 +113,6 @@ public class EnemySpawner : MonoBehaviour
         StartCoroutine(SpawnWave());
     }
 
-    public void SpawnButtons(string[] difficulties)
-    {
-        int index = 1;
-        foreach(string difficulty in difficulties)
-        {
-            GameObject selector = Instantiate(button, level_selector.transform);
-            selector.transform.localPosition = new Vector3(0, (130 - 50 * index));
-            selector.GetComponent<MenuSelectorController>().spawner = this;
-            selector.GetComponent<MenuSelectorController>().SetLevel(difficulty);
-            index++;
-        }
-    }
 
     IEnumerator SpawnWave()
     {
@@ -67,7 +126,7 @@ public class EnemySpawner : MonoBehaviour
         GameManager.Instance.state = GameManager.GameState.INWAVE;
         for (int i = 0; i < 10; ++i)
         {
-            yield return SpawnZombie();
+            yield return SpawnEnemy();
         }
         yield return new WaitWhile(() => GameManager.Instance.enemy_count > 0);
         GameManager.Instance.state = GameManager.GameState.WAVEEND;
@@ -87,5 +146,11 @@ public class EnemySpawner : MonoBehaviour
         en.speed = 10;
         GameManager.Instance.AddEnemy(new_enemy);
         yield return new WaitForSeconds(0.5f);
+    }
+
+    IEnumerator SpawnEnemy()
+    {
+        string[] spawnType = 
+        SpawnPoint spawn_point = SpawnPoints
     }
 }
