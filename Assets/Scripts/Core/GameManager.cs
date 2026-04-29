@@ -60,6 +60,17 @@ public class GameManager
         enemies.Remove(enemy);
     }
 
+    public void ClearEnemies()
+    {
+        if (enemies == null) return;
+        foreach (GameObject enemy in enemies.ToList())
+        {
+            if (enemy != null)
+                UnityEngine.Object.Destroy(enemy);
+        }
+        enemies.Clear();
+    }
+
     public GameObject GetClosestEnemy(Vector3 point)
     {
         if (enemies == null || enemies.Count == 0) return null;
