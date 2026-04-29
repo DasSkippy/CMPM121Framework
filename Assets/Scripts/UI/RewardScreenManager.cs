@@ -81,9 +81,22 @@ public class RewardScreenManager : MonoBehaviour
         if (spawner == null) spawner = FindFirstObjectByType<EnemySpawner>();
         if (spawner == null) return;
 
-        if (GameManager.Instance.state == GameManager.GameState.WAVEEND && spawner.HasMoreWaves())
-            spawner.NextWave();
-        else
+        // The button may also have a persistent UnityEvent wired up in the scene.
+        // If that event already started the next wave, the game state will no longer
+        // be WAVEEND by the time this handler runs. Never interpret that as "Return
+        // to Start" while more waves exist.
+        if (GameManager.Instance.state == GameManager.GameState.GAMEOVER)
+        {
             spawner.ReturnToStart();
+            return;
+        }
+
+        if (spawner.HasMoreWaves())
+        {
+            spawner.NextWave();
+            return;
+        }
+
+        spawner.ReturnToStart();
     }
 }
