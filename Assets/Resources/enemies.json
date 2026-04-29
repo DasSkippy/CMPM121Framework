@@ -26,6 +26,13 @@
         "hp": 50,
         "speed": 8,
         "damage": 20
+    },
+    {
+        "name": "the hand",
+        "sprite": 6,
+        "hp": 13,
+        "speed": 6,
+        "damage": 15
     }
 
 ]
