@@ -38,7 +38,7 @@ public class Spawn
     public string location;
 }
 
-    public class EnemySpawner : MonoBehaviour
+public class EnemySpawner : MonoBehaviour
 {
     public Image level_selector;
     public GameObject button;
@@ -50,6 +50,7 @@ public class Spawn
 
     Level currentLevel;
     int currentWave;
+    Coroutine waveRoutine;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -110,24 +111,46 @@ public class Spawn
         }
         // this is not nice: we should not have to be required to tell the player directly that the level is starting
         GameManager.Instance.player.GetComponent<PlayerController>().StartLevel();
-        StartCoroutine(SpawnWave());
+        waveRoutine = StartCoroutine(SpawnWave());
     }
 
     public void NextWave()
     {
-        if (currentLevel == null)
-        {
-            return;
-        }
+        if (GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
+        if (waveRoutine != null) return;
+        if (!HasMoreWaves()) return;
 
-        if (currentLevel.waves > 0 && currentWave >= currentLevel.waves)
-        {
-            return;
-        }
-
-        StartCoroutine(SpawnWave());
+        waveRoutine = StartCoroutine(SpawnWave());
     }
 
+    public bool HasMoreWaves()
+    {
+        if (currentLevel == null) return false;
+        if (currentLevel.waves <= 0) return true; // endless
+        return currentWave < currentLevel.waves;
+    }
+
+    public void OnGameOver()
+    {
+        if (waveRoutine != null)
+        {
+            StopCoroutine(waveRoutine);
+            waveRoutine = null;
+        }
+    }
+
+    public void ReturnToStart()
+    {
+        StopAllCoroutines();
+        waveRoutine = null;
+
+        GameManager.Instance.ClearEnemies();
+        currentLevel = null;
+        currentWave = 0;
+
+        level_selector.gameObject.SetActive(true);
+        GameManager.Instance.state = GameManager.GameState.PREGAME;
+    }
 
     IEnumerator SpawnWave()
     {
@@ -154,6 +177,7 @@ public class Spawn
 
         yield return new WaitWhile(() => GameManager.Instance.enemy_count > 0);
         GameManager.Instance.state = GameManager.GameState.WAVEEND;
+        waveRoutine = null;
     }
 
     IEnumerator SpawnEnemyGroups(Spawn spawn)
