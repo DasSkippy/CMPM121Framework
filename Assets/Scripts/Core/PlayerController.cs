@@ -63,7 +63,13 @@ public class PlayerController : MonoBehaviour
 
     void Die()
     {
+        if (GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
+        GameManager.Instance.state = GameManager.GameState.GAMEOVER;
         Debug.Log("You Lost");
+
+        EnemySpawner spawner = FindFirstObjectByType<EnemySpawner>();
+        if (spawner != null)
+            spawner.OnGameOver();
     }
 
 }
