@@ -54,10 +54,10 @@ public class Spawn
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        GameObject selector = Instantiate(button, level_selector.transform);
-        selector.transform.localPosition = new Vector3(0, 130);
-        selector.GetComponent<MenuSelectorController>().spawner = this;
-        selector.GetComponent<MenuSelectorController>().SetLevel("Start");
+        // GameObject selector = Instantiate(button, level_selector.transform);
+        // selector.transform.localPosition = new Vector3(0, 130);
+        // selector.GetComponent<MenuSelectorController>().spawner = this;
+        // selector.GetComponent<MenuSelectorController>().SetLevel("Start");
 
         TextAsset enemiesFile = Resources.Load<TextAsset>("enemies");
         string enemiesJson = enemiesFile.text;
