@@ -16,6 +16,11 @@ public class GameManager
     public GameState state;
 
     public int countdown;
+    public int waveNumber { get; private set; }
+
+    public int waveDamageDealtToMonsters { get; private set; }
+    public int waveDamageTakenByPlayer { get; private set; }
+    public int waveEnemiesKilled { get; private set; }
     private static GameManager theInstance;
     public static GameManager Instance {  get
         {
@@ -36,12 +41,22 @@ public class GameManager
     private List<GameObject> enemies;
     public int enemy_count { get { return enemies.Count; } }
 
+    public void BeginWave(int newWaveNumber)
+    {
+        waveNumber = newWaveNumber;
+        waveDamageDealtToMonsters = 0;
+        waveDamageTakenByPlayer = 0;
+        waveEnemiesKilled = 0;
+    }
+
     public void AddEnemy(GameObject enemy)
     {
         enemies.Add(enemy);
     }
     public void RemoveEnemy(GameObject enemy)
     {
+        if (state == GameState.INWAVE)
+            waveEnemiesKilled++;
         enemies.Remove(enemy);
     }
 
@@ -55,5 +70,15 @@ public class GameManager
     private GameManager()
     {
         enemies = new List<GameObject>();
+        EventBus.Instance.OnDamage += OnDamage;
+    }
+
+    private void OnDamage(Vector3 where, Damage dmg, Hittable target)
+    {
+        if (target == null) return;
+        if (target.team == Hittable.Team.MONSTERS)
+            waveDamageDealtToMonsters += dmg.amount;
+        else if (target.team == Hittable.Team.PLAYER)
+            waveDamageTakenByPlayer += dmg.amount;
     }
 }
