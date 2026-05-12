@@ -14,22 +14,22 @@ public class Spell
         this.owner = owner;
     }
 
-    public string GetName()
+    public virtual string GetName()
     {
         return "Bolt";
     }
 
-    public int GetManaCost()
+    public virtual int GetManaCost()
     {
         return 10;
     }
 
-    public int GetDamage()
+    public virtual int GetDamage()
     {
         return 100;
     }
 
-    public float GetCooldown()
+    public virtual float GetCooldown()
     {
         return 0.75f;
     }
@@ -39,7 +39,7 @@ public class Spell
         return 0;
     }
 
-    public bool IsReady()
+    public virtual bool IsReady()
     {
         return (last_cast + GetCooldown() < Time.time);
     }
@@ -47,6 +47,7 @@ public class Spell
     public virtual IEnumerator Cast(Vector3 where, Vector3 target, Hittable.Team team)
     {
         this.team = team;
+        last_cast = Time.time;
         GameManager.Instance.projectileManager.CreateProjectile(0, "straight", where, target - where, 15f, OnHit);
         yield return new WaitForEndOfFrame();
     }
