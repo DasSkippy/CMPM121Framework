@@ -46,6 +46,11 @@ public class Spell
 
     public virtual IEnumerator Cast(Vector3 where, Vector3 target, Hittable.Team team)
     {
+        yield return Cast(where, target, team, 0);
+    }
+
+    public virtual IEnumerator Cast(Vector3 where, Vector3 target, Hittable.Team team, int spellPower)
+    {
         this.team = team;
         last_cast = Time.time;
         GameManager.Instance.projectileManager.CreateProjectile(0, "straight", where, target - where, 15f, OnHit);

@@ -61,7 +61,7 @@ public class GeneratedSpell : Spell
 
     public override int GetIcon()
     {
-        return Int("icon", 0);
+        return Int("icon", 0, DisplayPower());
     }
 
     public override string GetName()
@@ -78,25 +78,24 @@ public class GeneratedSpell : Spell
 
     public override int GetManaCost()
     {
-        float mana = Float("mana_cost", 10);
-        mana = ApplyMultiplier(mana, "mana_multiplier");
-        mana += ModifierFloat("mana_adder", 0);
+        int power = DisplayPower();
+        float mana = Float("mana_cost", 10, power);
+        mana = ApplyMultiplier(mana, "mana_multiplier", power);
+        mana += ModifierFloat("mana_adder", 0, power);
         return Mathf.Max(0, Mathf.RoundToInt(mana));
     }
 
     public override int GetDamage()
     {
-        float damage = DamageAmount();
-        damage = ApplyMultiplier(damage, "damage_multiplier");
-        damage += ModifierFloat("damage_adder", 0);
-        return Mathf.Max(0, Mathf.RoundToInt(damage));
+        return GetDamage(DisplayPower());
     }
 
     public override float GetCooldown()
     {
-        float cooldown = Float("cooldown", 1);
-        cooldown = ApplyMultiplier(cooldown, "cooldown_multiplier");
-        cooldown += ModifierFloat("cooldown_adder", 0);
+        int power = DisplayPower();
+        float cooldown = Float("cooldown", 1, power);
+        cooldown = ApplyMultiplier(cooldown, "cooldown_multiplier", power);
+        cooldown += ModifierFloat("cooldown_adder", 0, power);
         return Mathf.Max(0.01f, cooldown);
     }
 
@@ -105,7 +104,7 @@ public class GeneratedSpell : Spell
         return last_cast + GetCooldown() < Time.time;
     }
 
-    public override IEnumerator Cast(Vector3 where, Vector3 target, Hittable.Team team)
+    public override IEnumerator Cast(Vector3 where, Vector3 target, Hittable.Team team, int spellPower)
     {
         this.team = team;
         last_cast = Time.time;
@@ -116,44 +115,44 @@ public class GeneratedSpell : Spell
             direction = Vector3.right;
         }
 
-        CastPattern(where, direction);
+        CastPattern(where, direction, spellPower);
 
-        float doublerDelay = ModifierFloat("delay", -1);
+        float doublerDelay = ModifierFloat("delay", -1, spellPower);
         if (doublerDelay >= 0)
         {
             yield return new WaitForSeconds(doublerDelay);
-            CastPattern(where, direction);
+            CastPattern(where, direction, spellPower);
         }
     }
 
-    private void CastPattern(Vector3 where, Vector3 direction)
+    private void CastPattern(Vector3 where, Vector3 direction, int spellPower)
     {
-        float splitAngle = ModifierFloat("angle", 0);
+        float splitAngle = ModifierFloat("angle", 0, spellPower);
         if (splitAngle > 0)
         {
-            CreatePatternProjectiles(where, Rotate(direction, -splitAngle));
-            CreatePatternProjectiles(where, Rotate(direction, splitAngle));
+            CreatePatternProjectiles(where, Rotate(direction, -splitAngle), spellPower);
+            CreatePatternProjectiles(where, Rotate(direction, splitAngle), spellPower);
             return;
         }
 
-        CreatePatternProjectiles(where, direction);
+        CreatePatternProjectiles(where, direction, spellPower);
     }
 
-    private void CreatePatternProjectiles(Vector3 where, Vector3 direction)
+    private void CreatePatternProjectiles(Vector3 where, Vector3 direction, int spellPower)
     {
-        if (Float("spray", 0) > 0)
+        if (Float("spray", 0, spellPower) > 0)
         {
-            CastSpray(where, direction);
+            CastSpray(where, direction, spellPower);
             return;
         }
 
-        CreateProjectile(baseSpell["projectile"] as JObject, where, direction, OnPrimaryHit);
+        CreateProjectile(baseSpell["projectile"] as JObject, where, direction, (other, impact) => OnPrimaryHit(other, impact, spellPower), spellPower);
     }
 
-    private void CastSpray(Vector3 where, Vector3 direction)
+    private void CastSpray(Vector3 where, Vector3 direction, int spellPower)
     {
-        int count = Mathf.Max(1, Mathf.RoundToInt(Float("N", 1)));
-        float spray = Float("spray", 0.25f);
+        int count = Mathf.Max(1, Mathf.RoundToInt(Float("N", 1, spellPower)));
+        float spray = Float("spray", 0.25f, spellPower);
         float baseAngle = Mathf.Atan2(direction.y, direction.x);
 
         for (int i = 0; i < count; i++)
@@ -161,55 +160,55 @@ public class GeneratedSpell : Spell
             float t = count == 1 ? 0.5f : i / (count - 1f);
             float angle = baseAngle + Mathf.Lerp(-spray, spray, t);
             Vector3 sprayDirection = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0);
-            CreateProjectile(baseSpell["projectile"] as JObject, where, sprayDirection, OnPrimaryHit);
+            CreateProjectile(baseSpell["projectile"] as JObject, where, sprayDirection, (other, impact) => OnPrimaryHit(other, impact, spellPower), spellPower);
         }
     }
 
-    private void OnPrimaryHit(Hittable other, Vector3 impact)
+    private void OnPrimaryHit(Hittable other, Vector3 impact, int spellPower)
     {
         if (other.team == team)
         {
             return;
         }
 
-        other.Damage(new Damage(GetDamage(), DamageType()));
+        other.Damage(new Damage(GetDamage(spellPower), DamageType()));
 
         if (baseSpell["secondary_projectile"] is JObject secondaryProjectile)
         {
-            int count = Mathf.Max(1, Mathf.RoundToInt(Float("N", 1)));
+            int count = Mathf.Max(1, Mathf.RoundToInt(Float("N", 1, spellPower)));
             for (int i = 0; i < count; i++)
             {
                 float angle = Mathf.PI * 2 * i / count;
                 Vector3 direction = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0);
-                CreateProjectile(secondaryProjectile, impact, direction, OnSecondaryHit);
+                CreateProjectile(secondaryProjectile, impact, direction, (secondaryTarget, secondaryImpact) => OnSecondaryHit(secondaryTarget, secondaryImpact, spellPower), spellPower);
             }
         }
     }
 
-    private void OnSecondaryHit(Hittable other, Vector3 impact)
+    private void OnSecondaryHit(Hittable other, Vector3 impact, int spellPower)
     {
         if (other.team != team)
         {
-            int damage = Mathf.Max(0, Mathf.RoundToInt(Float("secondary_damage", GetDamage())));
+            int damage = Mathf.Max(0, Mathf.RoundToInt(Float("secondary_damage", GetDamage(spellPower), spellPower)));
             other.Damage(new Damage(damage, DamageType()));
         }
     }
 
-    private void CreateProjectile(JObject projectile, Vector3 where, Vector3 direction, Action<Hittable, Vector3> onHit)
+    private void CreateProjectile(JObject projectile, Vector3 where, Vector3 direction, Action<Hittable, Vector3> onHit, int spellPower)
     {
         if (projectile == null)
         {
             return;
         }
 
-        int sprite = EvaluateInt(projectile["sprite"], 0);
+        int sprite = EvaluateInt(projectile["sprite"], 0, spellPower);
         string trajectory = ModifierText("projectile_trajectory", projectile.Value<string>("trajectory") ?? "straight");
-        float speed = EvaluateFloat(projectile["speed"], 10);
-        speed = ApplyMultiplier(speed, "speed_multiplier");
+        float speed = EvaluateFloat(projectile["speed"], 10, spellPower);
+        speed = ApplyMultiplier(speed, "speed_multiplier", spellPower);
 
         if (projectile["lifetime"] != null)
         {
-            float lifetime = EvaluateFloat(projectile["lifetime"], 1);
+            float lifetime = EvaluateFloat(projectile["lifetime"], 1, spellPower);
             GameManager.Instance.projectileManager.CreateProjectile(sprite, trajectory, where, direction, speed, onHit, lifetime);
             return;
         }
@@ -223,10 +222,23 @@ public class GeneratedSpell : Spell
         return Damage.TypeFromString(damage?.Value<string>("type") ?? "physical");
     }
 
-    private float DamageAmount()
+    private int GetDamage(int spellPower)
+    {
+        float damage = DamageAmount(spellPower);
+        damage = ApplyMultiplier(damage, "damage_multiplier", spellPower);
+        damage += ModifierFloat("damage_adder", 0, spellPower);
+        return Mathf.Max(0, Mathf.RoundToInt(damage));
+    }
+
+    private float DamageAmount(int spellPower)
     {
         JObject damage = baseSpell["damage"] as JObject;
-        return EvaluateFloat(damage?["amount"], 10);
+        return EvaluateFloat(damage?["amount"], 10, spellPower);
+    }
+
+    private int DisplayPower()
+    {
+        return owner == null ? 0 : owner.spellPower;
     }
 
     private string Text(string key, string defaultValue = "")
@@ -240,17 +252,17 @@ public class GeneratedSpell : Spell
         return modifier?.Value<string>(key) ?? defaultValue;
     }
 
-    private int Int(string key, int defaultValue)
+    private int Int(string key, int defaultValue, int spellPower)
     {
-        return EvaluateInt(baseSpell[key], defaultValue);
+        return EvaluateInt(baseSpell[key], defaultValue, spellPower);
     }
 
-    private float Float(string key, float defaultValue)
+    private float Float(string key, float defaultValue, int spellPower)
     {
-        return EvaluateFloat(baseSpell[key], defaultValue);
+        return EvaluateFloat(baseSpell[key], defaultValue, spellPower);
     }
 
-    private float ModifierFloat(string key, float defaultValue)
+    private float ModifierFloat(string key, float defaultValue, int spellPower)
     {
         bool found = false;
         float value = defaultValue;
@@ -262,7 +274,7 @@ public class GeneratedSpell : Spell
                 continue;
             }
 
-            float evaluated = EvaluateFloat(modifier[key], key.EndsWith("_multiplier") ? 1 : 0);
+            float evaluated = EvaluateFloat(modifier[key], key.EndsWith("_multiplier") ? 1 : 0, spellPower);
             value = found ? value + evaluated : evaluated;
             found = true;
         }
@@ -281,25 +293,25 @@ public class GeneratedSpell : Spell
             direction.z);
     }
 
-    private float ApplyMultiplier(float value, string key)
+    private float ApplyMultiplier(float value, string key, int spellPower)
     {
         foreach (JObject modifier in modifiers)
         {
             if (modifier[key] != null)
             {
-                value *= EvaluateFloat(modifier[key], 1);
+                value *= EvaluateFloat(modifier[key], 1, spellPower);
             }
         }
 
         return value;
     }
 
-    private int EvaluateInt(JToken token, int defaultValue)
+    private int EvaluateInt(JToken token, int defaultValue, int spellPower)
     {
-        return Mathf.RoundToInt(EvaluateFloat(token, defaultValue));
+        return Mathf.RoundToInt(EvaluateFloat(token, defaultValue, spellPower));
     }
 
-    private float EvaluateFloat(JToken token, float defaultValue)
+    private float EvaluateFloat(JToken token, float defaultValue, int spellPower)
     {
         if (token == null)
         {
@@ -330,7 +342,7 @@ public class GeneratedSpell : Spell
                 new Dictionary<string, int>
                 {
                     { "wave", Mathf.Max(1, GameManager.Instance.waveNumber) },
-                    { "power", 0 },
+                    { "power", spellPower },
                     { "base", Mathf.RoundToInt(defaultValue) }
                 });
 

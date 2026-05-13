@@ -7,6 +7,7 @@ public class SpellCaster
     public int mana;
     public int max_mana;
     public int mana_reg;
+    public int spellPower;
     public Hittable.Team team;
     public const int MAX_SPELLS = 4;
     public readonly List<Spell> spells = new List<Spell>();
@@ -27,6 +28,7 @@ public class SpellCaster
         this.mana = mana;
         this.max_mana = mana;
         this.mana_reg = mana_reg;
+        spellPower = 0;
         this.team = team;
         spells.Add(new SpellBuilder().Build(this));
         selectedSpellIndex = 0;
@@ -94,7 +96,7 @@ public class SpellCaster
         if (mana >= spell.GetManaCost() && spell.IsReady())
         {
             mana -= spell.GetManaCost();
-            yield return spell.Cast(where, target, team);
+            yield return spell.Cast(where, target, team, spellPower);
         }
         else
         {
