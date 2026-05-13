@@ -87,6 +87,12 @@
        "name": "nayanikaspell",
        "description": "Regular damage, but faster projectiles.",
        "speed_multiplier": "1.5"
+   },
+   "finalspell": {
+       "name": "finalspell",
+       "description": "Massively increased damage, but slower projectiles.",
+       "damage_multiplier": "3",
+       "speed_multiplier": "0.65"
    }
 
 }
