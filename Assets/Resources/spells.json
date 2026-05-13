@@ -82,6 +82,11 @@
        "description": "Reduced mana cost, but slightly reduced damage.",
        "mana_multiplier": "0.7",
        "damage_multiplier": "0.9"
+   },
+   "nayanikaspell": {
+       "name": "nayanikaspell",
+       "description": "Regular damage, but faster projectiles.",
+       "speed_multiplier": "1.5"
    }
 
 }
