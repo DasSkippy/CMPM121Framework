@@ -85,12 +85,23 @@ public class SpellCaster
     public IEnumerator Cast(Vector3 where, Vector3 target)
     {        
         Spell spell = GetSelectedSpell();
-        if (spell == null) yield break;
+        if (spell == null)
+        {
+            Debug.LogWarning("Tried to cast but no spell is selected/equipped.");
+            yield break;
+        }
 
         if (mana >= spell.GetManaCost() && spell.IsReady())
         {
             mana -= spell.GetManaCost();
             yield return spell.Cast(where, target, team);
+        }
+        else
+        {
+            if (mana < spell.GetManaCost())
+                Debug.Log($"Not enough mana to cast {spell.GetName()}: {mana}/{spell.GetManaCost()}");
+            else
+                Debug.Log($"Spell {spell.GetName()} on cooldown.");
         }
         yield break;
     }

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Globalization;
 
 public class SpellBuilder
 {
@@ -316,16 +317,35 @@ public class GeneratedSpell : Spell
             return defaultValue;
         }
 
-        object evaluated = InvokeRpnEvaluator(
-            expression,
-            new Dictionary<string, int>
-            {
-                { "wave", Mathf.Max(1, GameManager.Instance.waveNumber) },
-                { "power", 0 },
-                { "base", Mathf.RoundToInt(defaultValue) }
-            });
+        // Fast path: plain number (including decimals) without involving the RPN evaluator.
+        if (float.TryParse(expression, NumberStyles.Float, CultureInfo.InvariantCulture, out float numeric))
+        {
+            return numeric;
+        }
 
-        return Convert.ToSingle(evaluated);
+        try
+        {
+            object evaluated = InvokeRpnEvaluator(
+                expression,
+                new Dictionary<string, int>
+                {
+                    { "wave", Mathf.Max(1, GameManager.Instance.waveNumber) },
+                    { "power", 0 },
+                    { "base", Mathf.RoundToInt(defaultValue) }
+                });
+
+            return Convert.ToSingle(evaluated);
+        }
+        catch (TargetInvocationException tie)
+        {
+            Debug.LogError($"Failed to evaluate RPN expression '{expression}': {tie.InnerException?.Message ?? tie.Message}");
+            return defaultValue;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to evaluate RPN expression '{expression}': {e.Message}");
+            return defaultValue;
+        }
     }
 
     private object InvokeRpnEvaluator(string expression, Dictionary<string, int> variables)
