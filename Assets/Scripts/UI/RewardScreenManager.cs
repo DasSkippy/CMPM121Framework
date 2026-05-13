@@ -102,6 +102,20 @@ public class RewardScreenManager : MonoBehaviour
         if (spawner == null) spawner = FindFirstObjectByType<EnemySpawner>();
         if (spawner == null) return;
 
+        // Some scenes wire the button to also advance the wave via a persistent UnityEvent.
+        // If that event fires first, the GameManager state may no longer be WAVEEND by the time
+        // this handler runs. Always try to take the reward spell first when one is available.
+        EnsureRewardSpell();
+        if (rewardSpell != null)
+        {
+            if (!TryTakeRewardSpell())
+            {
+                if (waveLabel != null)
+                    waveLabel.text = "Drop a spell to make room for the reward.";
+                return;
+            }
+        }
+
         // The button may also have a persistent UnityEvent wired up in the scene.
         // If that event already started the next wave, the game state will no longer
         // be WAVEEND by the time this handler runs. Never interpret that as "Return
@@ -114,14 +128,6 @@ public class RewardScreenManager : MonoBehaviour
 
         if (GameManager.Instance.state == GameManager.GameState.WAVEEND)
         {
-            EnsureRewardSpell();
-            if (!TryTakeRewardSpell())
-            {
-                if (waveLabel != null)
-                    waveLabel.text = "Drop a spell to make room for the reward.";
-                return;
-            }
-
             if (spawner.HasMoreWaves())
             {
                 spawner.NextWave();

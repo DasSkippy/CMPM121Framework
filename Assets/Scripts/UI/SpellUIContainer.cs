@@ -64,4 +64,11 @@ public class SpellUIContainer : MonoBehaviour
             Refresh();
     }
 
+    public void SelectAt(int index)
+    {
+        if (caster == null) return;
+        caster.SelectSpell(index);
+        Refresh();
+    }
+
 }

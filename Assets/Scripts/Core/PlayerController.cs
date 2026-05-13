@@ -4,6 +4,10 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using System.Collections.Generic;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Globalization;
 
 public class PlayerController : MonoBehaviour
 {
@@ -38,6 +42,8 @@ public class PlayerController : MonoBehaviour
         hp.OnDeath += Die;
         hp.team = Hittable.Team.PLAYER;
 
+        ApplyWaveScaling(1);
+
         // tell UI elements what to show
         healthui.SetHealth(hp);
         manaui.SetSpellCaster(spellcaster);
@@ -49,6 +55,72 @@ public class PlayerController : MonoBehaviour
         {
             spellui.SetSpell(spellcaster.GetSelectedSpell());
         }
+    }
+
+    public void ApplyWaveScaling(int wave)
+    {
+        if (wave < 1) wave = 1;
+
+        // Player (max!) hp to "95 wave 5 * +"
+        int newMaxHp = EvaluateInt("95 wave 5 * +", wave, 100);
+        hp?.SetMaxHP(newMaxHp);
+
+        if (spellcaster != null)
+        {
+            // Player mana to "90 wave 10 * +"
+            int newMaxMana = EvaluateInt("90 wave 10 * +", wave, spellcaster.max_mana);
+            float manaPerc = spellcaster.max_mana <= 0 ? 1f : spellcaster.mana * 1f / spellcaster.max_mana;
+            spellcaster.max_mana = newMaxMana;
+            spellcaster.mana = Mathf.Clamp(Mathf.RoundToInt(manaPerc * newMaxMana), 0, newMaxMana);
+
+            // Player mana regeneration to "10 wave +"
+            spellcaster.mana_reg = EvaluateInt("10 wave +", wave, spellcaster.mana_reg);
+
+            // Player spell power to "wave 10 *"
+            spellcaster.spellPower = EvaluateInt("wave 10 *", wave, spellcaster.spellPower);
+        }
+
+        // Player speed to "5"
+        speed = EvaluateInt("5", wave, speed);
+    }
+
+    private static int EvaluateInt(string expression, int wave, int defaultValue)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+            return defaultValue;
+
+        if (int.TryParse(expression, NumberStyles.Integer, CultureInfo.InvariantCulture, out int literal))
+            return literal;
+
+        object evaluated = InvokeRpnEvaluator(expression, new Dictionary<string, int> { { "wave", wave } });
+        return Convert.ToInt32(evaluated);
+    }
+
+    private static object InvokeRpnEvaluator(string expression, Dictionary<string, int> variables)
+    {
+        Type rpnType = Type.GetType("RPNEvaluator.RPN, RPNEvaluator")
+            ?? Type.GetType("RPNEvaluator.RPNEvaluator, RPNEvaluator");
+
+        if (rpnType == null)
+            throw new InvalidOperationException("Could not find the RPNEvaluator type in RPNEvaluator.dll.");
+
+        MethodInfo method = rpnType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(candidate =>
+            {
+                if (candidate.Name != "Evaluate")
+                    return false;
+
+                ParameterInfo[] parameters = candidate.GetParameters();
+                return parameters.Length == 2
+                    && parameters[0].ParameterType == typeof(string)
+                    && parameters[1].ParameterType.IsAssignableFrom(typeof(Dictionary<string, int>));
+            });
+
+        if (method == null)
+            throw new InvalidOperationException("Could not find a compatible Evaluate method in RPNEvaluator.dll.");
+
+        return method.Invoke(null, new object[] { expression, variables });
     }
 
     // Update is called once per frame

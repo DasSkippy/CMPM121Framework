@@ -17,12 +17,14 @@ public class SpellUI : MonoBehaviour
     private SpellUIContainer container;
     private int slotIndex = -1;
     private Button dropButtonComponent;
+    private Button selectButtonComponent;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         last_text_update = 0;
         HookDropButton();
+        HookSelectButton();
     }
 
     public void Init(SpellUIContainer container, int slotIndex)
@@ -30,6 +32,7 @@ public class SpellUI : MonoBehaviour
         this.container = container;
         this.slotIndex = slotIndex;
         HookDropButton();
+        HookSelectButton();
     }
 
     public void SetHighlighted(bool isHighlighted)
@@ -98,5 +101,25 @@ public class SpellUI : MonoBehaviour
     private void OnDropClicked()
     {
         container?.DropAt(slotIndex);
+    }
+
+    private void HookSelectButton()
+    {
+        if (selectButtonComponent != null) return;
+
+        // Prefer a Button on the slot root; fall back to the icon's Button if present.
+        selectButtonComponent = GetComponent<Button>();
+        if (selectButtonComponent == null && icon != null)
+            selectButtonComponent = icon.GetComponent<Button>();
+
+        if (selectButtonComponent == null) return;
+
+        selectButtonComponent.onClick.RemoveListener(OnSelectClicked);
+        selectButtonComponent.onClick.AddListener(OnSelectClicked);
+    }
+
+    private void OnSelectClicked()
+    {
+        container?.SelectAt(slotIndex);
     }
 }

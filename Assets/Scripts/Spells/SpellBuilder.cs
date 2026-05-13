@@ -14,6 +14,20 @@ public class SpellBuilder
         SpellsJsonDb.EnsureLoaded();
     }
 
+    public Spell BuildFromBaseId(SpellCaster owner, string baseSpellId)
+    {
+        if (string.IsNullOrWhiteSpace(baseSpellId))
+            return null;
+
+        if (!SpellsJsonDb.TryGet(baseSpellId, out JObject baseSpell) || baseSpell == null)
+            return null;
+
+        if (baseSpell["projectile"] == null || baseSpell["damage"] == null)
+            return null;
+
+        return new GeneratedSpell(owner, baseSpell, new List<JObject>());
+    }
+
     public Spell Build(SpellCaster owner)
     {
         List<JObject> baseSpells = SpellsJsonDb.All()
@@ -116,12 +130,34 @@ public class GeneratedSpell : Spell
         }
 
         CastPattern(where, direction, spellPower);
+        CastNova(where, spellPower);
 
         float doublerDelay = ModifierFloat("delay", -1, spellPower);
         if (doublerDelay >= 0)
         {
             yield return new WaitForSeconds(doublerDelay);
             CastPattern(where, direction, spellPower);
+            CastNova(where, spellPower);
+        }
+    }
+
+    private void CastNova(Vector3 where, int spellPower)
+    {
+        int count = Mathf.RoundToInt(ModifierFloat("nova_N", 0, spellPower));
+        if (count <= 0)
+            return;
+
+        // Nova only makes sense for base spells that have a projectile definition.
+        JObject projectile = baseSpell["projectile"] as JObject;
+        if (projectile == null)
+            return;
+
+        float angleStep = 360f / count;
+        for (int i = 0; i < count; i++)
+        {
+            float degrees = angleStep * i;
+            Vector3 dir = Rotate(Vector3.right, degrees);
+            CreateProjectile(projectile, where, dir, (other, impact) => OnPrimaryHit(other, impact, spellPower), spellPower);
         }
     }
 
@@ -130,8 +166,10 @@ public class GeneratedSpell : Spell
         float splitAngle = ModifierFloat("angle", 0, spellPower);
         if (splitAngle > 0)
         {
-            CreatePatternProjectiles(where, Rotate(direction, -splitAngle), spellPower);
-            CreatePatternProjectiles(where, Rotate(direction, splitAngle), spellPower);
+            float a = UnityEngine.Random.Range(-splitAngle, splitAngle);
+            float b = UnityEngine.Random.Range(-splitAngle, splitAngle);
+            CreatePatternProjectiles(where, Rotate(direction, a), spellPower);
+            CreatePatternProjectiles(where, Rotate(direction, b), spellPower);
             return;
         }
 

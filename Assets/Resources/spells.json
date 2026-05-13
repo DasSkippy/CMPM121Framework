@@ -93,6 +93,12 @@
        "description": "Massively increased damage, but slower projectiles.",
        "damage_multiplier": "3",
        "speed_multiplier": "0.65"
+   },
+   "nova": {
+       "name": "nova",
+       "description": "Also casts the spell in all directions (increased mana cost).",
+       "nova_N": "8",
+       "mana_multiplier": "1.75"
    }
 
 }

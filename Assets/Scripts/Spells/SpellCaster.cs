@@ -30,7 +30,8 @@ public class SpellCaster
         this.mana_reg = mana_reg;
         spellPower = 0;
         this.team = team;
-        spells.Add(new SpellBuilder().Build(this));
+        Spell starter = new SpellBuilder().BuildFromBaseId(this, "arcane_bolt");
+        spells.Add(starter ?? new SpellBuilder().Build(this));
         selectedSpellIndex = 0;
     }
 
