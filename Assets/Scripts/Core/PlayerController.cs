@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
 
     public SpellCaster spellcaster;
     public SpellUI spellui;
+    public SpellUIContainer spelluiContainer;
 
     public int speed;
 
@@ -23,6 +24,9 @@ public class PlayerController : MonoBehaviour
     {
         unit = GetComponent<Unit>();
         GameManager.Instance.player = gameObject;
+
+        if (spelluiContainer == null)
+            spelluiContainer = FindFirstObjectByType<SpellUIContainer>();
     }
 
     public void StartLevel()
@@ -37,13 +41,30 @@ public class PlayerController : MonoBehaviour
         // tell UI elements what to show
         healthui.SetHealth(hp);
         manaui.SetSpellCaster(spellcaster);
-        spellui.SetSpell(spellcaster.spell);
+        if (spelluiContainer != null)
+        {
+            spelluiContainer.Bind(spellcaster);
+        }
+        else if (spellui != null)
+        {
+            spellui.SetSpell(spellcaster.GetSelectedSpell());
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (spellcaster == null) return;
+        if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
+
+        if (Keyboard.current == null) return;
+        if (Keyboard.current.digit1Key.wasPressedThisFrame) spellcaster.SelectSpell(0);
+        if (Keyboard.current.digit2Key.wasPressedThisFrame) spellcaster.SelectSpell(1);
+        if (Keyboard.current.digit3Key.wasPressedThisFrame) spellcaster.SelectSpell(2);
+        if (Keyboard.current.digit4Key.wasPressedThisFrame) spellcaster.SelectSpell(3);
+
+        if (spelluiContainer != null)
+            spelluiContainer.Refresh();
     }
 
     void OnAttack(InputValue value)

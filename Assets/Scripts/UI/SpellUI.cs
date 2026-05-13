@@ -14,16 +14,49 @@ public class SpellUI : MonoBehaviour
     const float UPDATE_DELAY = 1;
     public GameObject dropbutton;
 
+    private SpellUIContainer container;
+    private int slotIndex = -1;
+    private Button dropButtonComponent;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         last_text_update = 0;
+        HookDropButton();
+    }
+
+    public void Init(SpellUIContainer container, int slotIndex)
+    {
+        this.container = container;
+        this.slotIndex = slotIndex;
+        HookDropButton();
+    }
+
+    public void SetHighlighted(bool isHighlighted)
+    {
+        if (highlight != null)
+            highlight.SetActive(isHighlighted);
     }
 
     public void SetSpell(Spell spell)
     {
         this.spell = spell;
-        GameManager.Instance.spellIconManager.PlaceSprite(spell.GetIcon(), icon.GetComponent<Image>());
+        if (spell == null)
+        {
+            if (icon != null) icon.SetActive(false);
+            if (manacost != null) manacost.text = "";
+            if (damage != null) damage.text = "";
+            if (cooldown != null) cooldown.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 0);
+            if (dropbutton != null) dropbutton.SetActive(false);
+            return;
+        }
+
+        if (icon != null)
+        {
+            icon.SetActive(true);
+            GameManager.Instance.spellIconManager.PlaceSprite(spell.GetIcon(), icon.GetComponent<Image>());
+        }
+        if (dropbutton != null) dropbutton.SetActive(true);
     }
 
     // Update is called once per frame
@@ -48,5 +81,22 @@ public class SpellUI : MonoBehaviour
             perc = 1-since_last / spell.GetCooldown();
         }
         cooldown.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 48 * perc);
+    }
+
+    private void HookDropButton()
+    {
+        if (dropButtonComponent != null) return;
+        if (dropbutton == null) return;
+
+        dropButtonComponent = dropbutton.GetComponent<Button>();
+        if (dropButtonComponent == null) return;
+
+        dropButtonComponent.onClick.RemoveListener(OnDropClicked);
+        dropButtonComponent.onClick.AddListener(OnDropClicked);
+    }
+
+    private void OnDropClicked()
+    {
+        container?.DropAt(slotIndex);
     }
 }
