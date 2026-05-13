@@ -76,6 +76,12 @@
        "damage_multiplier": "0.75",
        "mana_adder": "10",
        "projectile_trajectory": "homing"
+   },
+   "efficient": {
+       "name": "efficient",
+       "description": "Reduced mana cost, but slightly reduced damage.",
+       "mana_multiplier": "0.7",
+       "damage_multiplier": "0.9"
    }
 
 }
