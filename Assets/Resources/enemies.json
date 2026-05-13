@@ -24,14 +24,14 @@
         "name": "the eye",
         "sprite": 5,
         "hp": 50,
-        "speed": 8,
+        "speed": 6,
         "damage": 20
     },
     {
         "name": "the hand",
         "sprite": 6,
         "hp": 13,
-        "speed": 6,
+        "speed": 5,
         "damage": 15
     }
 
