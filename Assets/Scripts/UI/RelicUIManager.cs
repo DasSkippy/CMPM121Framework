@@ -8,7 +8,12 @@ public class RelicUIManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        //EventBus.Instance.OnRelicPickup += OnRelicPickup;
+        EventBus.Instance.OnRelicPickup += OnRelicPickup;
+    }
+
+    void OnDestroy()
+    {
+        EventBus.Instance.OnRelicPickup -= OnRelicPickup;
     }
 
     // Update is called once per frame
@@ -17,7 +22,7 @@ public class RelicUIManager : MonoBehaviour
         
     }
 
-    /*public void OnRelicPickup(Relic r)
+    public void OnRelicPickup(Relic r)
     {
         // make a new Relic UI representation
         GameObject rui = Instantiate(relicUIPrefab, transform);
@@ -25,6 +30,6 @@ public class RelicUIManager : MonoBehaviour
         RelicUI ruic = rui.GetComponent<RelicUI>();
         ruic.player = player;
         ruic.index = player.relics.Count - 1;
-        
-    }*/
+
+    }
 }

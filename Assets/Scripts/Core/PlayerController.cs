@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     public int speed;
 
     public Unit unit;
+    public List<Relic> relics = new List<Relic>();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -35,6 +36,8 @@ public class PlayerController : MonoBehaviour
 
     public void StartLevel()
     {
+        ClearRelics();
+
         spellcaster = new SpellCaster(125, 8, Hittable.Team.PLAYER);
         StartCoroutine(spellcaster.ManaRegeneration());
         
@@ -55,6 +58,41 @@ public class PlayerController : MonoBehaviour
         {
             spellui.SetSpell(spellcaster.GetSelectedSpell());
         }
+
+        AddStartingRelicForTesting();
+    }
+
+    public void AddRelic(Relic relic)
+    {
+        if (relic == null)
+        {
+            return;
+        }
+
+        relics.Add(relic);
+        relic.Activate();
+        EventBus.Instance.DoRelicPickup(relic);
+    }
+
+    private void ClearRelics()
+    {
+        foreach (Relic relic in relics)
+        {
+            relic?.Deactivate();
+        }
+
+        relics.Clear();
+    }
+
+    private void AddStartingRelicForTesting()
+    {
+        IReadOnlyList<RelicJson> definitions = RelicsJsonDb.All();
+        if (definitions.Count == 0)
+        {
+            return;
+        }
+
+        AddRelic(new Relic(definitions[0], this));
     }
 
     public void ApplyWaveScaling(int wave)
