@@ -32,6 +32,7 @@ public class Relic
     public void Deactivate()
     {
         trigger?.Unregister();
+        effect?.Remove();
     }
 
     public string GetLabel()
@@ -168,6 +169,33 @@ public sealed class StandStillTrigger : RelicTrigger
     }
 }
 
+public sealed class OnKillTrigger : RelicTrigger
+{
+    public OnKillTrigger(PlayerController player, RelicEffect effect) : base(player, effect)
+    {
+    }
+
+    public override void Register()
+    {
+        EventBus.Instance.OnEnemyKilled += OnEnemyKilled;
+    }
+
+    public override void Unregister()
+    {
+        EventBus.Instance.OnEnemyKilled -= OnEnemyKilled;
+    }
+
+    private void OnEnemyKilled(GameObject enemy)
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        effect.Apply();
+    }
+}
+
 public abstract class RelicEffect
 {
     protected readonly PlayerController player;
@@ -241,6 +269,67 @@ public sealed class GainSpellPowerEffect : RelicEffect
     }
 }
 
+public sealed class UntilCastSpellEffect : RelicEffect
+{
+    private readonly RelicEffect inner;
+    private bool subscribed;
+
+    public UntilCastSpellEffect(PlayerController player, RelicEffect inner) : base(player)
+    {
+        this.inner = inner;
+    }
+
+    public override void Apply()
+    {
+        if (inner == null || player == null || player.spellcaster == null)
+        {
+            return;
+        }
+
+        inner.Apply();
+
+        if (!subscribed)
+        {
+            subscribed = true;
+            EventBus.Instance.OnSpellCast += OnSpellCast;
+        }
+    }
+
+    public override void Remove()
+    {
+        inner?.Remove();
+        Unsubscribe();
+    }
+
+    private void OnSpellCast(SpellCaster caster, Spell spell)
+    {
+        if (player == null || player.spellcaster == null)
+        {
+            Unsubscribe();
+            return;
+        }
+
+        if (caster != player.spellcaster)
+        {
+            return;
+        }
+
+        inner?.Remove();
+        Unsubscribe();
+    }
+
+    private void Unsubscribe()
+    {
+        if (!subscribed)
+        {
+            return;
+        }
+
+        subscribed = false;
+        EventBus.Instance.OnSpellCast -= OnSpellCast;
+    }
+}
+
 public static class RelicTriggerFactory
 {
     public static RelicTrigger Create(RelicTriggerJson definition, PlayerController player, RelicEffect effect)
@@ -256,6 +345,8 @@ public static class RelicTriggerFactory
                 return new TakeDamageTrigger(player, effect);
             case "stand-still":
                 return new StandStillTrigger(player, effect, definition.amount);
+            case "on-kill":
+                return new OnKillTrigger(player, effect);
             default:
                 Debug.LogWarning($"Unsupported relic trigger type '{definition.type}'.");
                 return null;
@@ -277,7 +368,12 @@ public static class RelicEffectFactory
             case "gain-mana":
                 return new GainManaEffect(player, definition.amount);
             case "gain-spellpower":
-                return new GainSpellPowerEffect(player, definition.amount);
+                RelicEffect baseEffect = new GainSpellPowerEffect(player, definition.amount);
+                if (definition.until == "cast-spell")
+                {
+                    return new UntilCastSpellEffect(player, baseEffect);
+                }
+                return baseEffect;
             default:
                 Debug.LogWarning($"Unsupported relic effect type '{definition.type}'.");
                 return null;

@@ -16,6 +16,8 @@ public class EventBus
 
     public event Action<Vector3, Damage, Hittable> OnDamage;
     public event Action<Relic> OnRelicPickup;
+    public event Action<SpellCaster, Spell> OnSpellCast;
+    public event Action<GameObject> OnEnemyKilled;
 
     public void DoDamage(Vector3 where, Damage dmg, Hittable target)
     {
@@ -25,6 +27,16 @@ public class EventBus
     public void DoRelicPickup(Relic relic)
     {
         OnRelicPickup?.Invoke(relic);
+    }
+
+    public void DoSpellCast(SpellCaster caster, Spell spell)
+    {
+        OnSpellCast?.Invoke(caster, spell);
+    }
+
+    public void DoEnemyKilled(GameObject enemy)
+    {
+        OnEnemyKilled?.Invoke(enemy);
     }
 
 }
