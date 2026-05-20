@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -86,6 +87,87 @@ public sealed class TakeDamageTrigger : RelicTrigger
     }
 }
 
+public sealed class StandStillTrigger : RelicTrigger
+{
+    private readonly float secondsRequired;
+    private Coroutine watchRoutine;
+    private float lastMoveTime;
+    private bool effectActive;
+
+    public StandStillTrigger(PlayerController player, RelicEffect effect, string amountExpression) : base(player, effect)
+    {
+        secondsRequired = Mathf.Max(0, RelicExpression.EvaluateFloat(amountExpression, 0));
+    }
+
+    public override void Register()
+    {
+        if (player == null || player.unit == null)
+        {
+            return;
+        }
+
+        lastMoveTime = Time.time;
+        player.unit.OnMove += OnMove;
+        watchRoutine = player.StartCoroutine(WatchStandStill());
+    }
+
+    public override void Unregister()
+    {
+        if (player != null && player.unit != null)
+        {
+            player.unit.OnMove -= OnMove;
+        }
+
+        if (player != null && watchRoutine != null)
+        {
+            player.StopCoroutine(watchRoutine);
+            watchRoutine = null;
+        }
+
+        RemoveEffect();
+    }
+
+    private IEnumerator WatchStandStill()
+    {
+        while (true)
+        {
+            if (player == null || player.unit == null)
+            {
+                yield break;
+            }
+
+            if (player.unit.movement.sqrMagnitude > Mathf.Epsilon)
+            {
+                OnMove(0);
+            }
+            else if (!effectActive && Time.time - lastMoveTime >= secondsRequired)
+            {
+                effect.Apply();
+                effectActive = true;
+            }
+
+            yield return null;
+        }
+    }
+
+    private void OnMove(float distance)
+    {
+        lastMoveTime = Time.time;
+        RemoveEffect();
+    }
+
+    private void RemoveEffect()
+    {
+        if (!effectActive)
+        {
+            return;
+        }
+
+        effect.Remove();
+        effectActive = false;
+    }
+}
+
 public abstract class RelicEffect
 {
     protected readonly PlayerController player;
@@ -96,6 +178,10 @@ public abstract class RelicEffect
     }
 
     public abstract void Apply();
+
+    public virtual void Remove()
+    {
+    }
 }
 
 public sealed class GainManaEffect : RelicEffect
@@ -119,6 +205,42 @@ public sealed class GainManaEffect : RelicEffect
     }
 }
 
+public sealed class GainSpellPowerEffect : RelicEffect
+{
+    private readonly string amountExpression;
+    private int appliedAmount;
+    private bool applied;
+
+    public GainSpellPowerEffect(PlayerController player, string amountExpression) : base(player)
+    {
+        this.amountExpression = amountExpression;
+    }
+
+    public override void Apply()
+    {
+        if (player == null || player.spellcaster == null || applied)
+        {
+            return;
+        }
+
+        appliedAmount = RelicExpression.EvaluateInt(amountExpression, 0);
+        player.spellcaster.spellPower += appliedAmount;
+        applied = true;
+    }
+
+    public override void Remove()
+    {
+        if (player == null || player.spellcaster == null || !applied)
+        {
+            return;
+        }
+
+        player.spellcaster.spellPower -= appliedAmount;
+        appliedAmount = 0;
+        applied = false;
+    }
+}
+
 public static class RelicTriggerFactory
 {
     public static RelicTrigger Create(RelicTriggerJson definition, PlayerController player, RelicEffect effect)
@@ -132,6 +254,8 @@ public static class RelicTriggerFactory
         {
             case "take-damage":
                 return new TakeDamageTrigger(player, effect);
+            case "stand-still":
+                return new StandStillTrigger(player, effect, definition.amount);
             default:
                 Debug.LogWarning($"Unsupported relic trigger type '{definition.type}'.");
                 return null;
@@ -152,6 +276,8 @@ public static class RelicEffectFactory
         {
             case "gain-mana":
                 return new GainManaEffect(player, definition.amount);
+            case "gain-spellpower":
+                return new GainSpellPowerEffect(player, definition.amount);
             default:
                 Debug.LogWarning($"Unsupported relic effect type '{definition.type}'.");
                 return null;
@@ -163,12 +289,17 @@ public static class RelicExpression
 {
     public static int EvaluateInt(string expression, int defaultValue)
     {
+        return Mathf.RoundToInt(EvaluateFloat(expression, defaultValue));
+    }
+
+    public static float EvaluateFloat(string expression, float defaultValue)
+    {
         if (string.IsNullOrWhiteSpace(expression))
         {
             return defaultValue;
         }
 
-        if (int.TryParse(expression, NumberStyles.Integer, CultureInfo.InvariantCulture, out int literal))
+        if (float.TryParse(expression, NumberStyles.Float, CultureInfo.InvariantCulture, out float literal))
         {
             return literal;
         }
@@ -180,7 +311,7 @@ public static class RelicExpression
                 { "wave", Mathf.Max(1, GameManager.Instance.waveNumber) }
             });
 
-        return Convert.ToInt32(evaluated);
+        return Convert.ToSingle(evaluated);
     }
 
     private static object InvokeRpnEvaluator(string expression, Dictionary<string, int> variables)
