@@ -67,6 +67,9 @@ public class EnemySpawner : MonoBehaviour
 
         enemies = JsonConvert.DeserializeObject<List<Enemy>>(enemiesJson);
         levels = JsonConvert.DeserializeObject<List<Level>>(levelsJson);
+
+        // Ensure relic definitions are loaded early so later systems can depend on them.
+        RelicsJsonDb.EnsureLoaded();
         SpawnButtons();
     }
 
