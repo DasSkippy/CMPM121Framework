@@ -66,5 +66,18 @@
             "type": "heal-player",
             "amount": "3"
         }
+    },
+    {
+        "name": "Ruby Fang",
+        "sprite": 5,
+        "trigger": {
+            "description": "When you kill an enemy",
+            "type": "on-kill"
+        },
+        "effect": {
+            "description": "you heal 5 health.",
+            "type": "heal-player",
+            "amount": "5"
+        }
     }
 ]
