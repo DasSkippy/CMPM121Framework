@@ -196,6 +196,33 @@ public sealed class OnKillTrigger : RelicTrigger
     }
 }
 
+public sealed class CastSpellTrigger : RelicTrigger
+{
+    public CastSpellTrigger(PlayerController player, RelicEffect effect) : base(player, effect)
+    {
+    }
+
+    public override void Register()
+    {
+        EventBus.Instance.OnSpellCast += OnSpellCast;
+    }
+
+    public override void Unregister()
+    {
+        EventBus.Instance.OnSpellCast -= OnSpellCast;
+    }
+
+    private void OnSpellCast(SpellCaster caster, Spell spell)
+    {
+        if (player == null || caster != player.spellcaster)
+        {
+            return;
+        }
+
+        effect.Apply();
+    }
+}
+
 public abstract class RelicEffect
 {
     protected readonly PlayerController player;
@@ -230,6 +257,27 @@ public sealed class GainManaEffect : RelicEffect
 
         int amount = RelicExpression.EvaluateInt(amountExpression, 0);
         player.spellcaster.mana = Mathf.Min(player.spellcaster.max_mana, player.spellcaster.mana + amount);
+    }
+}
+
+public sealed class HealPlayerEffect : RelicEffect
+{
+    private readonly string amountExpression;
+
+    public HealPlayerEffect(PlayerController player, string amountExpression) : base(player)
+    {
+        this.amountExpression = amountExpression;
+    }
+
+    public override void Apply()
+    {
+        if (player == null || player.hp == null)
+        {
+            return;
+        }
+
+        int amount = RelicExpression.EvaluateInt(amountExpression, 0);
+        player.hp.hp = Mathf.Min(player.hp.max_hp, player.hp.hp + amount);
     }
 }
 
@@ -347,6 +395,8 @@ public static class RelicTriggerFactory
                 return new StandStillTrigger(player, effect, definition.amount);
             case "on-kill":
                 return new OnKillTrigger(player, effect);
+            case "cast-spell":
+                return new CastSpellTrigger(player, effect);
             default:
                 Debug.LogWarning($"Unsupported relic trigger type '{definition.type}'.");
                 return null;
@@ -367,6 +417,8 @@ public static class RelicEffectFactory
         {
             case "gain-mana":
                 return new GainManaEffect(player, definition.amount);
+            case "heal-player":
+                return new HealPlayerEffect(player, definition.amount);
             case "gain-spellpower":
                 RelicEffect baseEffect = new GainSpellPowerEffect(player, definition.amount);
                 if (definition.until == "cast-spell")

@@ -53,5 +53,18 @@
             "type": "gain-mana",
             "amount": "25"
         }
+    },
+    {
+        "name": "Silver Chalice",
+        "sprite": 4,
+        "trigger": {
+            "description": "When you cast a spell",
+            "type": "cast-spell"
+        },
+        "effect": {
+            "description": "you heal 3 health.",
+            "type": "heal-player",
+            "amount": "3"
+        }
     }
 ]
