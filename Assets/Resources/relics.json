@@ -79,5 +79,31 @@
             "type": "heal-player",
             "amount": "5"
         }
+    },
+    {
+        "name": "Iron Heart",
+        "sprite": 4,
+        "trigger": {
+            "description": "Whenever you finish a wave",
+            "type": "wave-complete"
+        },
+        "effect": {
+            "description": "you gain 10 max health.",
+            "type": "gain-max-health",
+            "amount": "10"
+        }
+    },
+    {
+        "name": "Ruby Wand",
+        "sprite": 5,
+        "trigger": {
+            "description": "Whenever you cast a spell",
+            "type": "spell-cast"
+        },
+        "effect": {
+            "description": "you recover 3 health.",
+            "type": "heal",
+            "amount": "3"
+        }
     }
 ]
