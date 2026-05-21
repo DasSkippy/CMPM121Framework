@@ -185,6 +185,7 @@ public class EnemySpawner : MonoBehaviour
         }
 
         yield return new WaitWhile(() => GameManager.Instance.enemy_count > 0);
+        EventBus.Instance.DoWaveComplete(currentWave);
         GameManager.Instance.state = GameManager.GameState.WAVEEND;
         waveRoutine = null;
     }

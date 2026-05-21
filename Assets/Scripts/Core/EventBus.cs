@@ -18,6 +18,7 @@ public class EventBus
     public event Action<Relic> OnRelicPickup;
     public event Action<SpellCaster, Spell> OnSpellCast;
     public event Action<GameObject> OnEnemyKilled;
+    public event Action<int> OnWaveComplete;
 
     public void DoDamage(Vector3 where, Damage dmg, Hittable target)
     {
@@ -37,6 +38,11 @@ public class EventBus
     public void DoEnemyKilled(GameObject enemy)
     {
         OnEnemyKilled?.Invoke(enemy);
+    }
+
+    public void DoWaveComplete(int waveNumber)
+    {
+        OnWaveComplete?.Invoke(waveNumber);
     }
 
 }
