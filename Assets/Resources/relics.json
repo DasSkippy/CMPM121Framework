@@ -98,11 +98,11 @@
         "sprite": 5,
         "trigger": {
             "description": "Whenever you cast a spell",
-            "type": "spell-cast"
+            "type": "cast-spell"
         },
         "effect": {
             "description": "you recover 3 health.",
-            "type": "heal",
+            "type": "heal-player",
             "amount": "3"
         }
     }

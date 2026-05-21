@@ -199,6 +199,28 @@ public sealed class OnKillTrigger : RelicTrigger
 public sealed class CastSpellTrigger : RelicTrigger
 {
     public CastSpellTrigger(PlayerController player, RelicEffect effect) : base(player, effect)
+    {
+    }
+
+    public override void Register()
+    {
+        EventBus.Instance.OnSpellCast += OnSpellCast;
+    }
+
+    public override void Unregister()
+    {
+        EventBus.Instance.OnSpellCast -= OnSpellCast;
+    }
+
+    private void OnSpellCast(SpellCaster caster, Spell spell)
+    {
+        if (player == null || caster != player.spellcaster)
+        {
+            return;
+        }
+
+        effect.Apply();
+    }
 }
 
 public sealed class WaveCompleteTrigger : RelicTrigger
@@ -220,33 +242,6 @@ public sealed class WaveCompleteTrigger : RelicTrigger
     private void OnWaveComplete(int waveNumber)
     {
         if (player == null)
-        {
-            return;
-        }
-
-        effect.Apply();
-    }
-}
-
-public sealed class SpellCastTrigger : RelicTrigger
-{
-    public SpellCastTrigger(PlayerController player, RelicEffect effect) : base(player, effect)
-    {
-    }
-
-    public override void Register()
-    {
-        EventBus.Instance.OnSpellCast += OnSpellCast;
-    }
-
-    public override void Unregister()
-    {
-        EventBus.Instance.OnSpellCast -= OnSpellCast;
-    }
-
-    private void OnSpellCast(SpellCaster caster, Spell spell)
-    {
-        if (player == null || caster != player.spellcaster)
         {
             return;
         }
@@ -370,27 +365,6 @@ public sealed class GainMaxHealthEffect : RelicEffect
     }
 }
 
-public sealed class HealEffect : RelicEffect
-{
-    private readonly string amountExpression;
-
-    public HealEffect(PlayerController player, string amountExpression) : base(player)
-    {
-        this.amountExpression = amountExpression;
-    }
-
-    public override void Apply()
-    {
-        if (player == null || player.hp == null)
-        {
-            return;
-        }
-
-        int amount = RelicExpression.EvaluateInt(amountExpression, 0);
-        player.hp.hp = Mathf.Min(player.hp.max_hp, player.hp.hp + amount);
-    }
-}
-
 public sealed class UntilCastSpellEffect : RelicEffect
 {
     private readonly RelicEffect inner;
@@ -473,8 +447,6 @@ public static class RelicTriggerFactory
                 return new CastSpellTrigger(player, effect);
             case "wave-complete":
                 return new WaveCompleteTrigger(player, effect);
-            case "spell-cast":
-                return new SpellCastTrigger(player, effect);
             default:
                 Debug.LogWarning($"Unsupported relic trigger type '{definition.type}'.");
                 return null;
@@ -506,8 +478,6 @@ public static class RelicEffectFactory
                 return baseEffect;
             case "gain-max-health":
                 return new GainMaxHealthEffect(player, definition.amount);
-            case "heal":
-                return new HealEffect(player, definition.amount);
             default:
                 Debug.LogWarning($"Unsupported relic effect type '{definition.type}'.");
                 return null;
