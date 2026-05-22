@@ -99,27 +99,71 @@ public class PlayerController : MonoBehaviour
     {
         if (wave < 1) wave = 1;
 
-        // Player (max!) hp to "95 wave 5 * +"
-        int newMaxHp = EvaluateInt("95 wave 5 * +", wave, 100);
+        PlayerClassJson classAttributes = GetSelectedClassAttributes();
+        if (classAttributes == null)
+        {
+            return;
+        }
+
+        int newMaxHp = EvaluateInt(classAttributes.health, wave, hp == null ? 100 : hp.max_hp);
         hp?.SetMaxHP(newMaxHp);
 
         if (spellcaster != null)
         {
-            // Player mana to "90 wave 10 * +"
-            int newMaxMana = EvaluateInt("90 wave 10 * +", wave, spellcaster.max_mana);
+            int newMaxMana = EvaluateInt(classAttributes.mana, wave, spellcaster.max_mana);
             float manaPerc = spellcaster.max_mana <= 0 ? 1f : spellcaster.mana * 1f / spellcaster.max_mana;
             spellcaster.max_mana = newMaxMana;
             spellcaster.mana = Mathf.Clamp(Mathf.RoundToInt(manaPerc * newMaxMana), 0, newMaxMana);
 
-            // Player mana regeneration to "10 wave +"
-            spellcaster.mana_reg = EvaluateInt("10 wave +", wave, spellcaster.mana_reg);
+            spellcaster.mana_reg = EvaluateInt(classAttributes.mana_regeneration, wave, spellcaster.mana_reg);
 
-            // Player spell power to "wave 10 *"
-            spellcaster.spellPower = EvaluateInt("wave 10 *", wave, spellcaster.spellPower);
+            spellcaster.spellPower = EvaluateInt(classAttributes.spellpower, wave, spellcaster.spellPower);
         }
 
-        // Player speed to "5"
-        speed = EvaluateInt("5", wave, speed);
+        speed = EvaluateInt(classAttributes.speed, wave, speed);
+        ApplyClassSprite(classAttributes);
+    }
+
+    private PlayerClassJson GetSelectedClassAttributes()
+    {
+        string classId = GameManager.Instance.playerClassId;
+        if (!string.IsNullOrWhiteSpace(classId) && ClassesJsonDb.TryGet(classId, out PlayerClassJson selectedClass))
+        {
+            return selectedClass;
+        }
+
+        KeyValuePair<string, PlayerClassJson> fallback = ClassesJsonDb.All().FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(fallback.Key) && fallback.Value != null)
+        {
+            GameManager.Instance.SetPlayerClass(fallback.Key);
+            return fallback.Value;
+        }
+
+        Debug.LogWarning("No player class is selected and classes.json has no usable class definitions.");
+        return null;
+    }
+
+    private void ApplyClassSprite(PlayerClassJson classAttributes)
+    {
+        if (classAttributes == null || GameManager.Instance.playerSpriteManager == null)
+        {
+            return;
+        }
+
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        int spriteIndex = classAttributes.sprite;
+        if (spriteIndex < 0 || spriteIndex >= GameManager.Instance.playerSpriteManager.GetCount())
+        {
+            Debug.LogWarning($"Player class sprite index {spriteIndex} is outside the player sprite manager range.");
+            return;
+        }
+
+        spriteRenderer.sprite = GameManager.Instance.playerSpriteManager.Get(spriteIndex);
     }
 
     private static int EvaluateInt(string expression, int wave, int defaultValue)
