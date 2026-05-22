@@ -208,27 +208,36 @@ public class RewardScreenManager : MonoBehaviour
 
         if (screenshotSpellText != null)
         {
-            screenshotSpellText.text = BuildSpellTextForScreenshot();
+            string spellText = BuildSpellTextForScreenshot();
+            screenshotSpellText.text = string.IsNullOrEmpty(spellText)
+                ? "No spell reward this wave."
+                : spellText;
+            screenshotSpellText.gameObject.SetActive(true);
         }
 
-        // Use the existing primary button as "Accept Spell" (center).
+        // Show "Accept Spell" button only when there is a spell reward; hide it otherwise
+        // so the Next Wave button (below) is the only call-to-action.
         if (primaryButton != null)
         {
-            primaryButton.gameObject.SetActive(rewardSpell != null);
-            RectTransform rect = primaryButton.GetComponent<RectTransform>();
-            if (rect != null)
+            bool hasSpell = rewardSpell != null;
+            primaryButton.gameObject.SetActive(hasSpell);
+            if (hasSpell)
             {
-                rect.SetParent(screenshotRoot, false);
-                rect.anchorMin = new Vector2(0.5f, 0.5f);
-                rect.anchorMax = new Vector2(0.5f, 0.5f);
-                rect.pivot = new Vector2(0.5f, 0.5f);
-                rect.anchoredPosition = new Vector2(0, 40);
-                rect.sizeDelta = new Vector2(240, rect.sizeDelta.y > 0 ? rect.sizeDelta.y : 44);
-            }
+                RectTransform rect = primaryButton.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    rect.SetParent(screenshotRoot, false);
+                    rect.anchorMin = new Vector2(0.5f, 0.5f);
+                    rect.anchorMax = new Vector2(0.5f, 0.5f);
+                    rect.pivot = new Vector2(0.5f, 0.5f);
+                    rect.anchoredPosition = new Vector2(0, 40);
+                    rect.sizeDelta = new Vector2(240, rect.sizeDelta.y > 0 ? rect.sizeDelta.y : 44);
+                }
 
-            if (primaryButtonLabel != null)
-            {
-                primaryButtonLabel.text = "Accept Spell";
+                if (primaryButtonLabel != null)
+                {
+                    primaryButtonLabel.text = "Accept Spell";
+                }
             }
         }
 
@@ -573,8 +582,8 @@ public class RewardScreenManager : MonoBehaviour
 
         if (player == null || player.spellcaster == null)
         {
+            // Player not ready yet — don't stamp rewardWave so we retry next frame.
             rewardSpell = null;
-            rewardWave = wave;
             return;
         }
 
