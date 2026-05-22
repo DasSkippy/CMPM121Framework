@@ -59,7 +59,9 @@ public class PlayerController : MonoBehaviour
             spellui.SetSpell(spellcaster.GetSelectedSpell());
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         AddStartingRelicForTesting();
+#endif
     }
 
     public void AddRelic(Relic relic)

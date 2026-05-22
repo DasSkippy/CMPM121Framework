@@ -49,9 +49,9 @@
             "type": "on-kill"
         },
         "effect": {
-            "description": "you gain 25 mana.",
+            "description": "you gain 10 mana.",
             "type": "gain-mana",
-            "amount": "25"
+            "amount": "10"
         }
     },
     {
