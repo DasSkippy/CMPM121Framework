@@ -70,7 +70,10 @@ public class EnemySpawner : MonoBehaviour
 
         // Ensure relic definitions are loaded early so later systems can depend on them.
         RelicsJsonDb.EnsureLoaded();
-        SpawnButtons();
+        ClassesJsonDb.EnsureLoaded();
+
+        // Pregame: pick a character class first, then pick a level.
+        ShowClassSelection();
     }
 
     // Update is called once per frame
@@ -81,6 +84,8 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnButtons()
     {
+        ClearMenuButtons();
+
         string[] difficulties = new string[levels.Count];
         int i = 0;
         foreach (Level level in levels)
@@ -94,9 +99,59 @@ public class EnemySpawner : MonoBehaviour
         {
             GameObject selector = Instantiate(button, level_selector.transform);
             selector.transform.localPosition = new Vector3(0, (130 - 50 * index));
-            selector.GetComponent<MenuSelectorController>().spawner = this;
-            selector.GetComponent<MenuSelectorController>().SetLevel(difficulty);
+            MenuSelectorController controller = selector.GetComponent<MenuSelectorController>();
+            controller.spawner = this;
+            controller.classId = null;
+            controller.SetLevel(difficulty);
             index++;
+        }
+    }
+
+    private void ShowClassSelection()
+    {
+        ClearMenuButtons();
+
+        var classIds = ClassesJsonDb.All().Keys.OrderBy(id => id).ToArray();
+        if (classIds.Length == 0)
+        {
+            Debug.LogWarning("No classes found in classes.json; skipping class selection.");
+            SpawnButtons();
+            return;
+        }
+
+        int index = 1;
+        foreach (string classId in classIds)
+        {
+            GameObject selector = Instantiate(button, level_selector.transform);
+            selector.transform.localPosition = new Vector3(0, (130 - 50 * index));
+
+            MenuSelectorController controller = selector.GetComponent<MenuSelectorController>();
+            controller.spawner = this;
+            controller.classId = classId;
+            controller.SetLevel(classId);
+
+            index++;
+        }
+    }
+
+    private void ClearMenuButtons()
+    {
+        if (level_selector == null)
+        {
+            return;
+        }
+
+        for (int i = level_selector.transform.childCount - 1; i >= 0; i--)
+        {
+            Destroy(level_selector.transform.GetChild(i).gameObject);
+        }
+    }
+
+    public void SelectClass(string classId)
+    {
+        if (GameManager.Instance.SetPlayerClass(classId))
+        {
+            SpawnButtons();
         }
     }
 
@@ -142,6 +197,27 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    public void DebugFinishWave()
+    {
+        if (GameManager.Instance.state != GameManager.GameState.INWAVE
+            && GameManager.Instance.state != GameManager.GameState.COUNTDOWN)
+        {
+            return;
+        }
+
+        if (waveRoutine != null)
+        {
+            StopCoroutine(waveRoutine);
+            waveRoutine = null;
+        }
+
+        GameManager.Instance.ClearEnemies();
+        EventBus.Instance.DoWaveComplete(GameManager.Instance.waveNumber);
+        GameManager.Instance.state = GameManager.GameState.WAVEEND;
+    }
+#endif
+
     public void ReturnToStart()
     {
         StopAllCoroutines();
@@ -153,6 +229,8 @@ public class EnemySpawner : MonoBehaviour
 
         level_selector.gameObject.SetActive(true);
         GameManager.Instance.state = GameManager.GameState.PREGAME;
+        GameManager.Instance.ClearPlayerClass();
+        ShowClassSelection();
     }
 
     IEnumerator SpawnWave()

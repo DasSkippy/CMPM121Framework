@@ -31,6 +31,8 @@ public class GameManager
     }
 
     public GameObject player;
+
+    public string playerClassId { get; private set; }
     
     public ProjectileManager projectileManager;
     public SpellIconManager spellIconManager;
@@ -82,6 +84,29 @@ public class GameManager
     {
         enemies = new List<GameObject>();
         EventBus.Instance.OnDamage += OnDamage;
+        ClassesJsonDb.EnsureLoaded();
+    }
+
+    public bool SetPlayerClass(string classId)
+    {
+        if (string.IsNullOrWhiteSpace(classId))
+        {
+            return false;
+        }
+
+        if (!ClassesJsonDb.TryGet(classId, out _))
+        {
+            Debug.LogWarning($"Unknown player class '{classId}'. Check classes.json.");
+            return false;
+        }
+
+        playerClassId = classId;
+        return true;
+    }
+
+    public void ClearPlayerClass()
+    {
+        playerClassId = null;
     }
 
     private void OnDamage(Vector3 where, Damage dmg, Hittable target)

@@ -375,7 +375,7 @@ public class GeneratedSpell : Spell
 
         try
         {
-            object evaluated = InvokeRpnEvaluator(
+            double evaluated = EvaluateRpnExpression(
                 expression,
                 new Dictionary<string, int>
                 {
@@ -386,16 +386,76 @@ public class GeneratedSpell : Spell
 
             return Convert.ToSingle(evaluated);
         }
-        catch (TargetInvocationException tie)
-        {
-            Debug.LogError($"Failed to evaluate RPN expression '{expression}': {tie.InnerException?.Message ?? tie.Message}");
-            return defaultValue;
-        }
         catch (Exception e)
         {
             Debug.LogError($"Failed to evaluate RPN expression '{expression}': {e.Message}");
             return defaultValue;
         }
+    }
+
+    private static double EvaluateRpnExpression(string expression, Dictionary<string, int> variables)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            throw new ArgumentException("Expression was empty.");
+        }
+
+        Stack<double> stack = new Stack<double>();
+        string[] tokens = expression.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        foreach (string token in tokens)
+        {
+            if (variables != null && variables.TryGetValue(token, out int intValue))
+            {
+                stack.Push(intValue);
+                continue;
+            }
+
+            if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out double number))
+            {
+                stack.Push(number);
+                continue;
+            }
+
+            if (token == "+" || token == "-" || token == "*" || token == "/" || token == "%")
+            {
+                if (stack.Count < 2)
+                {
+                    throw new InvalidOperationException("Not enough operands");
+                }
+
+                double b = stack.Pop();
+                double a = stack.Pop();
+                switch (token)
+                {
+                    case "+":
+                        stack.Push(a + b);
+                        break;
+                    case "-":
+                        stack.Push(a - b);
+                        break;
+                    case "*":
+                        stack.Push(a * b);
+                        break;
+                    case "/":
+                        stack.Push(a / b);
+                        break;
+                    case "%":
+                        stack.Push(a % b);
+                        break;
+                }
+
+                continue;
+            }
+
+            throw new InvalidOperationException($"Unknown token '{token}'");
+        }
+
+        if (stack.Count != 1)
+        {
+            throw new InvalidOperationException("Expression did not resolve to a single value");
+        }
+
+        return stack.Pop();
     }
 
     private object InvokeRpnEvaluator(string expression, Dictionary<string, int> variables)

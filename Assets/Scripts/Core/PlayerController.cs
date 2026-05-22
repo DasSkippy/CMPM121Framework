@@ -168,6 +168,13 @@ public class PlayerController : MonoBehaviour
         if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
 
         if (Keyboard.current == null) return;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (Keyboard.current.lKey.wasPressedThisFrame)
+        {
+            EnemySpawner spawner = FindFirstObjectByType<EnemySpawner>();
+            spawner?.DebugFinishWave();
+        }
+#endif
         if (Keyboard.current.digit1Key.wasPressedThisFrame) spellcaster.SelectSpell(0);
         if (Keyboard.current.digit2Key.wasPressedThisFrame) spellcaster.SelectSpell(1);
         if (Keyboard.current.digit3Key.wasPressedThisFrame) spellcaster.SelectSpell(2);
