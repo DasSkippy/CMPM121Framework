@@ -105,5 +105,45 @@
             "type": "heal-player",
             "amount": "3"
         }
+    },
+    {
+        "name": "Victory Bell",
+        "sprite": 3,
+        "trigger": {
+            "description": "Whenever you finish a wave",
+            "type": "wave-complete"
+        },
+        "effect": {
+            "description": "you gain 30 mana.",
+            "type": "gain-mana",
+            "amount": "30"
+        }
+    },
+    {
+        "name": "Renewal Charm",
+        "sprite": 4,
+        "trigger": {
+            "description": "Whenever you finish a wave",
+            "type": "wave-complete"
+        },
+        "effect": {
+            "description": "you heal 15 health.",
+            "type": "heal-player",
+            "amount": "15"
+        }
+    },
+    {
+        "name": "Quiet Orb",
+        "sprite": 0,
+        "trigger": {
+            "description": "When you don't move for 3 seconds",
+            "type": "stand-still",
+            "amount": "3"
+        },
+        "effect": {
+            "description": "you gain 15 mana.",
+            "type": "gain-mana",
+            "amount": "15"
+        }
     }
 ]
