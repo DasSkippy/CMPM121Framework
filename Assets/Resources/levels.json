@@ -37,6 +37,11 @@
                 "hp": "base 2 * wave +",
                 "sequence": [2,1,2],
                 "location": "random"
+            },
+            {
+                "enemy": "ghost",
+                "count": "1 wave 4 / +",
+                "location": "random green"
             }
         ]
    },
@@ -79,6 +84,11 @@
                 "hp": "base 3 * wave +",
                 "sequence": [1,1,2],
                 "location": "random"
+            },
+            {
+                "enemy": "ghost",
+                "count": "1 wave 3 / +",
+                "location": "random green"
             }
         ]
    },

@@ -33,6 +33,13 @@
         "hp": 13,
         "speed": 5,
         "damage": 15
+    },
+    {
+        "name": "ghost",
+        "sprite": 4,
+        "hp": 15,
+        "speed": 9,
+        "damage": 8
     }
 
 ]
