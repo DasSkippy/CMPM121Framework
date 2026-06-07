@@ -24,19 +24,11 @@ public class PlayerController : MonoBehaviour
     public Unit unit;
     public List<Relic> relics = new List<Relic>();
 
-    [SerializeField] Transform cameraRoot;
-    [SerializeField] float mouseSensitivity = 0.1f;
-    [SerializeField] float minPitch = -80f;
-    [SerializeField] float maxPitch = 80f;
-    float pitch;
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         unit = GetComponent<Unit>();
         GameManager.Instance.player = gameObject;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
 
         if (spelluiContainer == null)
             spelluiContainer = FindFirstObjectByType<SpellUIContainer>();
@@ -256,22 +248,6 @@ public class PlayerController : MonoBehaviour
     {
         if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
         unit.movement = value.Get<Vector2>()*speed;
-    }
-
-    void OnLook(InputValue value)
-    {
-        Vector2 lookInput = value.Get<Vector2>();
-        lookInput = lookInput * mouseSensitivity;
-
-        transform.Rotate(Vector3.up * lookInput.x);
-
-        pitch = pitch - lookInput.y;
-        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
-
-        if (cameraRoot != null)
-        {
-            cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
-        }
     }
 
     void Die()
