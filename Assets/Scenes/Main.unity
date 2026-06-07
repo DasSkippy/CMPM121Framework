@@ -573,6 +573,15 @@ MonoBehaviour:
   damageDealtLabel: {fileID: 345736906}
   damageTakenLabel: {fileID: 1104975290}
   enemiesKilledLabel: {fileID: 1900363262}
+  primaryButton: {fileID: 0}
+  primaryButtonLabel: {fileID: 0}
+  enableRelicRewards: 1
+  relicRewardEveryNWaves: 3
+  relicRewardStartWave: 3
+  relicChoices: 3
+  forceSpellRewardTopLayout: 1
+  spellRewardFontScale: 0.75
+  useScreenshotLayout: 1
 --- !u!4 &220180078
 Transform:
   m_ObjectHideFlags: 0
@@ -2003,8 +2012,8 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 34
-  orthographic: 1
+  field of view: 60
+  orthographic: 0
   orthographic size: 10
   m_Depth: -1
   m_CullingMask:
@@ -5620,6 +5629,7 @@ MonoBehaviour:
   healthui: {fileID: 765025204}
   manaui: {fileID: 71109453}
   spellui: {fileID: 2085212185}
+  spelluiContainer: {fileID: 0}
   speed: 5
   unit: {fileID: 0}
 --- !u!4 &1718273953
