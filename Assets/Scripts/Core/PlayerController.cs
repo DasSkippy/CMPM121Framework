@@ -253,21 +253,7 @@ public class PlayerController : MonoBehaviour
     void OnMove(InputValue value)
     {
         if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
-
-        Vector2 moveInput = value.Get<Vector2>();
-
-        Vector3 forwardDirection = transform.forward;
-        Vector3 rightDirection = transform.right;
-
-        forwardDirection.y = 0f;
-        rightDirection.y = 0f;
-
-        forwardDirection.Normalize();
-        rightDirection.Normalize();
-
-        Vector3 moveDirection = forwardDirection * moveInput.y + rightDirection * moveInput.x;
-
-        unit.movement = new Vector2(moveDirection.x, moveDirection.z) * speed;
+        unit.movement = value.Get<Vector2>()*speed;
     }
 
     void OnLook(InputValue value)
