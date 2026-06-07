@@ -31,6 +31,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool enableVerticalLook = true;
 
     private float pitch;
+    private Vector2 moveInput;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -218,9 +219,35 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (spellcaster == null) return;
-        if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
+        if (GameManager.Instance.state == GameManager.GameState.PREGAME
+            || GameManager.Instance.state == GameManager.GameState.GAMEOVER
+            || GameManager.Instance.state == GameManager.GameState.WAVEEND)
+        {
+            unit.movement = Vector3.zero;
+            return;
+        }
 
+        Vector3 forwardDirection = transform.forward;
+        Vector3 rightDirection = transform.right;
+
+        forwardDirection.y = 0f;
+        rightDirection.y = 0f;
+
+        forwardDirection.Normalize();
+        rightDirection.Normalize();
+
+        Vector3 forwardMovement = forwardDirection * moveInput.y;
+        Vector3 rightMovement = rightDirection * moveInput.x;
+        Vector3 moveDirection = forwardMovement + rightMovement;
+
+        if (moveDirection.magnitude > 1f)
+        {
+            moveDirection.Normalize();
+        }
+
+        unit.movement = moveDirection * speed;
+
+        if (spellcaster == null) return;
         if (Keyboard.current == null) return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (Keyboard.current.lKey.wasPressedThisFrame)
@@ -289,8 +316,7 @@ public class PlayerController : MonoBehaviour
 
     void OnMove(InputValue value)
     {
-        if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
-        unit.movement = value.Get<Vector2>()*speed;
+        moveInput = value.Get<Vector2>();
     }
 
     void Die()
