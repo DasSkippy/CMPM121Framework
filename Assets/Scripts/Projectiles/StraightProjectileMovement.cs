@@ -9,6 +9,6 @@ public class StraightProjectileMovement : ProjectileMovement
 
     public override void Movement(Transform transform)
     {
-        transform.Translate(new Vector3(speed * Time.deltaTime, 0, 0), Space.Self);
+        transform.Translate(Vector3.forward * speed * Time.deltaTime, Space.Self);
     }
 }

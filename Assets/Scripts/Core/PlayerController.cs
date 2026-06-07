@@ -273,10 +273,17 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-        Vector2 mouseScreen = Mouse.current.position.value;
-        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(mouseScreen);
-        mouseWorld.z = 0;
-        StartCoroutine(spellcaster.Cast(transform.position, mouseWorld));
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return;
+        }
+
+        Vector3 startPosition = mainCamera.transform.position;
+        Vector3 aimDirection = mainCamera.transform.forward;
+        Vector3 targetPosition = startPosition + aimDirection * 100f;
+
+        StartCoroutine(spellcaster.Cast(startPosition, targetPosition));
     }
 
     void OnLook(InputValue value)
