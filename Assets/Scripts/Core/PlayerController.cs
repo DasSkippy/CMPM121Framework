@@ -24,6 +24,14 @@ public class PlayerController : MonoBehaviour
     public Unit unit;
     public List<Relic> relics = new List<Relic>();
 
+    [SerializeField] private Transform cameraRoot;
+    [SerializeField] private float mouseSensitivity = 0.1f;
+    [SerializeField] private float minPitch = -80f;
+    [SerializeField] private float maxPitch = 80f;
+    [SerializeField] private bool enableVerticalLook = true;
+
+    private float pitch;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -242,6 +250,41 @@ public class PlayerController : MonoBehaviour
         Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(mouseScreen);
         mouseWorld.z = 0;
         StartCoroutine(spellcaster.Cast(transform.position, mouseWorld));
+    }
+
+    void OnLook(InputValue value)
+    {
+        if (GameManager.Instance.state == GameManager.GameState.PREGAME
+            || GameManager.Instance.state == GameManager.GameState.GAMEOVER
+            || GameManager.Instance.state == GameManager.GameState.WAVEEND)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            return;
+        }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        Vector2 lookInput = value.Get<Vector2>();
+        lookInput = lookInput * mouseSensitivity;
+
+        transform.Rotate(0f, lookInput.x, 0f);
+
+        if (enableVerticalLook == false)
+        {
+            return;
+        }
+
+        if (cameraRoot == null)
+        {
+            return;
+        }
+
+        pitch = pitch - lookInput.y;
+        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+
+        cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     void OnMove(InputValue value)
