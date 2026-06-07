@@ -35,8 +35,6 @@ public class PlayerController : MonoBehaviour
     {
         unit = GetComponent<Unit>();
         GameManager.Instance.player = gameObject;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
 
         if (spelluiContainer == null)
             spelluiContainer = FindFirstObjectByType<SpellUIContainer>();
@@ -260,6 +258,18 @@ public class PlayerController : MonoBehaviour
 
     void OnLook(InputValue value)
     {
+        if (GameManager.Instance.state == GameManager.GameState.PREGAME
+            || GameManager.Instance.state == GameManager.GameState.GAMEOVER
+            || GameManager.Instance.state == GameManager.GameState.WAVEEND)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            return;
+        }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         Vector2 lookInput = value.Get<Vector2>();
         lookInput = lookInput * mouseSensitivity;
 
