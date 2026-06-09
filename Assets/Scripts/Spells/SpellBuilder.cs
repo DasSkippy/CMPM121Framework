@@ -322,13 +322,9 @@ public class GeneratedSpell : Spell
 
     private Vector3 Rotate(Vector3 direction, float degrees)
     {
-        float radians = degrees * Mathf.Deg2Rad;
-        float cos = Mathf.Cos(radians);
-        float sin = Mathf.Sin(radians);
-        return new Vector3(
-            direction.x * cos - direction.y * sin,
-            direction.x * sin + direction.y * cos,
-            direction.z);
+        Quaternion rotation = Quaternion.AngleAxis(degrees, Vector3.up);
+        Vector3 rotatedDirection = rotation * direction;
+        return rotatedDirection;
     }
 
     private float ApplyMultiplier(float value, string key, int spellPower)
