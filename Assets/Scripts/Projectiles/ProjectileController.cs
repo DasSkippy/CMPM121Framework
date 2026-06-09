@@ -21,7 +21,7 @@ public class ProjectileController : MonoBehaviour
     }
 
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("projectile")) return;
         if (collision.gameObject.CompareTag("unit"))

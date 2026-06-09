@@ -1,11 +1,10 @@
 using UnityEngine;
-using System.Collections.Generic;
 using System;
 
 public class Unit : MonoBehaviour
 {
     
-    public Vector2 movement;
+    public Vector3 movement;
     public float distance;
     public event Action<float> OnMove;
 
@@ -18,9 +17,18 @@ public class Unit : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        Move(new Vector2(movement.x, 0) * Time.fixedDeltaTime);
-        Move(new Vector2(0, movement.y) * Time.fixedDeltaTime);
-        distance += movement.magnitude*Time.fixedDeltaTime;
+        Vector3 groundMovement = movement;
+
+        if (Mathf.Abs(groundMovement.z) < Mathf.Epsilon && Mathf.Abs(groundMovement.y) > Mathf.Epsilon)
+        {
+            groundMovement.z = groundMovement.y;
+        }
+
+        groundMovement.y = 0f;
+
+        Move(new Vector3(groundMovement.x, 0f, 0f) * Time.fixedDeltaTime);
+        Move(new Vector3(0f, 0f, groundMovement.z) * Time.fixedDeltaTime);
+        distance += groundMovement.magnitude*Time.fixedDeltaTime;
         if (distance > 0.5f)
         {
             OnMove?.Invoke(distance);
@@ -28,14 +36,9 @@ public class Unit : MonoBehaviour
         }
     }
 
-    public void Move(Vector2 ds)
+    public void Move(Vector3 ds)
     {
-        List<RaycastHit2D> hits = new List<RaycastHit2D>();
-        int n = GetComponent<Rigidbody2D>().Cast(ds, hits, ds.magnitude * 2);
-        if (n == 0)
-        {
-            transform.Translate(ds);
-        }
+        transform.position += ds;
     }
 
 

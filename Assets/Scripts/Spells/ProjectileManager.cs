@@ -19,14 +19,22 @@ public class ProjectileManager : MonoBehaviour
 
     public void CreateProjectile(int which, string trajectory, Vector3 where, Vector3 direction, float speed, Action<Hittable,Vector3> onHit)
     {
-        GameObject new_projectile = Instantiate(projectiles[which], where + direction.normalized*1.1f, Quaternion.Euler(0,0,Mathf.Atan2(direction.y, direction.x)*Mathf.Rad2Deg));
+        Vector3 normalizedDirection = direction.normalized;
+        Vector3 spawnPosition = where + normalizedDirection * 1.1f;
+        Quaternion projectileRotation = Quaternion.LookRotation(normalizedDirection, Vector3.up);
+
+        GameObject new_projectile = Instantiate(projectiles[which], spawnPosition, projectileRotation);
         new_projectile.GetComponent<ProjectileController>().movement = MakeMovement(trajectory, speed);
         new_projectile.GetComponent<ProjectileController>().OnHit += onHit;
     }
 
     public void CreateProjectile(int which, string trajectory, Vector3 where, Vector3 direction, float speed, Action<Hittable, Vector3> onHit, float lifetime)
     {
-        GameObject new_projectile = Instantiate(projectiles[which], where + direction.normalized * 1.1f, Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg));
+        Vector3 normalizedDirection = direction.normalized;
+        Vector3 spawnPosition = where + normalizedDirection * 1.1f;
+        Quaternion projectileRotation = Quaternion.LookRotation(normalizedDirection, Vector3.up);
+
+        GameObject new_projectile = Instantiate(projectiles[which], spawnPosition, projectileRotation);
         new_projectile.GetComponent<ProjectileController>().movement = MakeMovement(trajectory, speed);
         new_projectile.GetComponent<ProjectileController>().OnHit += onHit;
         new_projectile.GetComponent<ProjectileController>().SetLifetime(lifetime);

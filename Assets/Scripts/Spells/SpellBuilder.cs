@@ -28,6 +28,55 @@ public class SpellBuilder
         return new GeneratedSpell(owner, baseSpell, new List<JObject>());
     }
 
+    public Spell BuildFromIds(SpellCaster owner, string baseSpellId, string[] modifierIds)
+    {
+        if (string.IsNullOrWhiteSpace(baseSpellId))
+        {
+            Debug.LogWarning("Debug spell selector needs a base spell ID.");
+            return null;
+        }
+
+        if (!SpellsJsonDb.TryGet(baseSpellId, out JObject baseSpell) || baseSpell == null)
+        {
+            Debug.LogWarning($"Debug spell selector could not find base spell ID '{baseSpellId}'.");
+            return null;
+        }
+
+        if (baseSpell["projectile"] == null || baseSpell["damage"] == null)
+        {
+            Debug.LogWarning($"Debug spell selector base spell ID '{baseSpellId}' is not a valid base spell.");
+            return null;
+        }
+
+        List<JObject> modifiers = new List<JObject>();
+        if (modifierIds != null)
+        {
+            foreach (string modifierId in modifierIds)
+            {
+                if (string.IsNullOrWhiteSpace(modifierId))
+                {
+                    continue;
+                }
+
+                if (!SpellsJsonDb.TryGet(modifierId, out JObject modifierSpell) || modifierSpell == null)
+                {
+                    Debug.LogWarning($"Debug spell selector could not find modifier ID '{modifierId}'. Skipping it.");
+                    continue;
+                }
+
+                if (modifierSpell["projectile"] != null || modifierSpell["damage"] != null)
+                {
+                    Debug.LogWarning($"Debug spell selector ID '{modifierId}' is not a modifier. Skipping it.");
+                    continue;
+                }
+
+                modifiers.Add(modifierSpell);
+            }
+        }
+
+        return new GeneratedSpell(owner, baseSpell, modifiers);
+    }
+
     public Spell Build(SpellCaster owner)
     {
         List<JObject> baseSpells = SpellsJsonDb.All()
@@ -191,13 +240,23 @@ public class GeneratedSpell : Spell
     {
         int count = Mathf.Max(1, Mathf.RoundToInt(Float("N", 1, spellPower)));
         float spray = Float("spray", 0.25f, spellPower);
-        float baseAngle = Mathf.Atan2(direction.y, direction.x);
+
+        Vector3 baseDirection = direction;
+        baseDirection.y = 0f;
+
+        if (baseDirection.sqrMagnitude <= Mathf.Epsilon)
+        {
+            baseDirection = Vector3.forward;
+        }
+
+        baseDirection.Normalize();
 
         for (int i = 0; i < count; i++)
         {
             float t = count == 1 ? 0.5f : i / (count - 1f);
-            float angle = baseAngle + Mathf.Lerp(-spray, spray, t);
-            Vector3 sprayDirection = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0);
+            float angle = Mathf.Lerp(-spray, spray, t);
+            float degrees = angle * Mathf.Rad2Deg;
+            Vector3 sprayDirection = Rotate(baseDirection, degrees);
             CreateProjectile(baseSpell["projectile"] as JObject, where, sprayDirection, (other, impact) => OnPrimaryHit(other, impact, spellPower), spellPower);
         }
     }
@@ -216,8 +275,8 @@ public class GeneratedSpell : Spell
             int count = Mathf.Max(1, Mathf.RoundToInt(Float("N", 1, spellPower)));
             for (int i = 0; i < count; i++)
             {
-                float angle = Mathf.PI * 2 * i / count;
-                Vector3 direction = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0);
+                float degrees = 360f * i / count;
+                Vector3 direction = Rotate(Vector3.right, degrees);
                 CreateProjectile(secondaryProjectile, impact, direction, (secondaryTarget, secondaryImpact) => OnSecondaryHit(secondaryTarget, secondaryImpact, spellPower), spellPower);
             }
         }
@@ -322,13 +381,9 @@ public class GeneratedSpell : Spell
 
     private Vector3 Rotate(Vector3 direction, float degrees)
     {
-        float radians = degrees * Mathf.Deg2Rad;
-        float cos = Mathf.Cos(radians);
-        float sin = Mathf.Sin(radians);
-        return new Vector3(
-            direction.x * cos - direction.y * sin,
-            direction.x * sin + direction.y * cos,
-            direction.z);
+        Quaternion rotation = Quaternion.AngleAxis(degrees, Vector3.up);
+        Vector3 rotatedDirection = rotation * direction;
+        return rotatedDirection;
     }
 
     private float ApplyMultiplier(float value, string key, int spellPower)

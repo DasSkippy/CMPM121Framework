@@ -314,7 +314,8 @@ public class EnemySpawner : MonoBehaviour
     void SpawnEnemy(Enemy enemyDefinition, SpawnPoint spawnPoint, int hp, int speed, int damage)
     {
         Vector2 offset = UnityEngine.Random.insideUnitCircle * 1.8f;
-        Vector3 position = spawnPoint.transform.position + new Vector3(offset.x, offset.y, 0f);
+        Vector3 spawnPosition = spawnPoint.transform.position;
+        Vector3 position = spawnPosition + new Vector3(offset.x, 0f, offset.y);
         GameObject newEnemy = Instantiate(enemy, position, Quaternion.identity);
 
         newEnemy.GetComponent<SpriteRenderer>().sprite = GameManager.Instance.enemySpriteManager.Get(enemyDefinition.sprite);

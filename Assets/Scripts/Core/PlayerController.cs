@@ -24,6 +24,43 @@ public class PlayerController : MonoBehaviour
     public Unit unit;
     public List<Relic> relics = new List<Relic>();
 
+    [SerializeField] private Transform cameraRoot;
+    [SerializeField] private float mouseSensitivity = 0.1f;
+    [SerializeField] private float minPitch = -80f;
+    [SerializeField] private float maxPitch = 80f;
+    [SerializeField] private bool enableVerticalLook = true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private enum DebugBaseSpell
+    {
+        ArcaneBolt,
+        MagicMissile,
+        ArcaneBlast,
+        ArcaneSpray
+    }
+
+    private enum DebugSpellModifier
+    {
+        None,
+        Splitter,
+        Nova,
+        Homing,
+        Chaos,
+        DamageAmp,
+        SpeedAmp,
+        Doubler
+    }
+
+    [Header("Temporary Debug Spell Selector")]
+    [SerializeField] private bool enableDebugSpellSelector;
+    [SerializeField] private bool clearSpellsBeforeDebugAdd;
+    [SerializeField] private DebugBaseSpell debugBaseSpell;
+    [SerializeField] private DebugSpellModifier debugModifier;
+#endif
+
+    private float pitch;
+    private Vector2 moveInput;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -40,6 +77,10 @@ public class PlayerController : MonoBehaviour
 
         spellcaster = new SpellCaster(125, 8, Hittable.Team.PLAYER);
         StartCoroutine(spellcaster.ManaRegeneration());
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        AddDebugSpellForTesting();
+#endif
         
         hp = new Hittable(100, Hittable.Team.PLAYER, gameObject);
         hp.OnDeath += Die;
@@ -63,6 +104,127 @@ public class PlayerController : MonoBehaviour
         AddStartingRelicForTesting();
 #endif
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    // Temporary debug/testing code for quickly trying spell combinations during the FPS pivot.
+    private void AddDebugSpellForTesting()
+    {
+        if (enableDebugSpellSelector == false)
+        {
+            return;
+        }
+
+        if (spellcaster == null)
+        {
+            return;
+        }
+
+        string debugBaseSpellId = GetDebugBaseSpellId();
+        string[] debugModifierIds = GetDebugModifierIds();
+
+        Spell debugSpell = new SpellBuilder().BuildFromIds(spellcaster, debugBaseSpellId, debugModifierIds);
+        if (debugSpell == null)
+        {
+            Debug.LogWarning("Debug spell selector did not create a spell.");
+            return;
+        }
+
+        if (clearSpellsBeforeDebugAdd)
+        {
+            spellcaster.spells.Clear();
+        }
+
+        bool added = spellcaster.TryAddSpell(debugSpell);
+        if (!added)
+        {
+            Debug.LogWarning("Debug spell selector could not add the spell. SpellCaster.MAX_SPELLS may be full.");
+            return;
+        }
+
+        spelluiContainer?.Refresh();
+    }
+
+    private string GetDebugBaseSpellId()
+    {
+        if (debugBaseSpell == DebugBaseSpell.ArcaneBolt)
+        {
+            return "arcane_bolt";
+        }
+
+        if (debugBaseSpell == DebugBaseSpell.MagicMissile)
+        {
+            return "magic_missile";
+        }
+
+        if (debugBaseSpell == DebugBaseSpell.ArcaneBlast)
+        {
+            return "arcane_blast";
+        }
+
+        if (debugBaseSpell == DebugBaseSpell.ArcaneSpray)
+        {
+            return "arcane_spray";
+        }
+
+        return "arcane_bolt";
+    }
+
+    private string[] GetDebugModifierIds()
+    {
+        string modifierId = GetDebugModifierId();
+        if (string.IsNullOrWhiteSpace(modifierId))
+        {
+            return new string[0];
+        }
+
+        return new string[] { modifierId };
+    }
+
+    private string GetDebugModifierId()
+    {
+        if (debugModifier == DebugSpellModifier.None)
+        {
+            return "";
+        }
+
+        if (debugModifier == DebugSpellModifier.Splitter)
+        {
+            return "splitter";
+        }
+
+        if (debugModifier == DebugSpellModifier.Nova)
+        {
+            return "nova";
+        }
+
+        if (debugModifier == DebugSpellModifier.Homing)
+        {
+            return "homing";
+        }
+
+        if (debugModifier == DebugSpellModifier.Chaos)
+        {
+            return "chaos";
+        }
+
+        if (debugModifier == DebugSpellModifier.DamageAmp)
+        {
+            return "damage_amp";
+        }
+
+        if (debugModifier == DebugSpellModifier.SpeedAmp)
+        {
+            return "speed_amp";
+        }
+
+        if (debugModifier == DebugSpellModifier.Doubler)
+        {
+            return "doubler";
+        }
+
+        return "";
+    }
+#endif
 
     public void AddRelic(Relic relic)
     {
@@ -210,9 +372,35 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (spellcaster == null) return;
-        if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
+        if (GameManager.Instance.state == GameManager.GameState.PREGAME
+            || GameManager.Instance.state == GameManager.GameState.GAMEOVER
+            || GameManager.Instance.state == GameManager.GameState.WAVEEND)
+        {
+            unit.movement = Vector3.zero;
+            return;
+        }
 
+        Vector3 forwardDirection = transform.forward;
+        Vector3 rightDirection = transform.right;
+
+        forwardDirection.y = 0f;
+        rightDirection.y = 0f;
+
+        forwardDirection.Normalize();
+        rightDirection.Normalize();
+
+        Vector3 forwardMovement = forwardDirection * moveInput.y;
+        Vector3 rightMovement = rightDirection * moveInput.x;
+        Vector3 moveDirection = forwardMovement + rightMovement;
+
+        if (moveDirection.magnitude > 1f)
+        {
+            moveDirection.Normalize();
+        }
+
+        unit.movement = moveDirection * speed;
+
+        if (spellcaster == null) return;
         if (Keyboard.current == null) return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (Keyboard.current.lKey.wasPressedThisFrame)
@@ -238,16 +426,57 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
-        Vector2 mouseScreen = Mouse.current.position.value;
-        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(mouseScreen);
-        mouseWorld.z = 0;
-        StartCoroutine(spellcaster.Cast(transform.position, mouseWorld));
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return;
+        }
+
+        Vector3 startPosition = mainCamera.transform.position;
+        Vector3 aimDirection = mainCamera.transform.forward;
+        Vector3 targetPosition = startPosition + aimDirection * 100f;
+
+        StartCoroutine(spellcaster.Cast(startPosition, targetPosition));
+    }
+
+    void OnLook(InputValue value)
+    {
+        if (GameManager.Instance.state == GameManager.GameState.PREGAME
+            || GameManager.Instance.state == GameManager.GameState.GAMEOVER
+            || GameManager.Instance.state == GameManager.GameState.WAVEEND)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            return;
+        }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        Vector2 lookInput = value.Get<Vector2>();
+        lookInput = lookInput * mouseSensitivity;
+
+        transform.Rotate(0f, lookInput.x, 0f);
+
+        if (enableVerticalLook == false)
+        {
+            return;
+        }
+
+        if (cameraRoot == null)
+        {
+            return;
+        }
+
+        pitch = pitch - lookInput.y;
+        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+
+        cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     void OnMove(InputValue value)
     {
-        if (GameManager.Instance.state == GameManager.GameState.PREGAME || GameManager.Instance.state == GameManager.GameState.GAMEOVER) return;
-        unit.movement = value.Get<Vector2>()*speed;
+        moveInput = value.Get<Vector2>();
     }
 
     void Die()
