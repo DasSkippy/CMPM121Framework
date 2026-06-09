@@ -28,6 +28,55 @@ public class SpellBuilder
         return new GeneratedSpell(owner, baseSpell, new List<JObject>());
     }
 
+    public Spell BuildFromIds(SpellCaster owner, string baseSpellId, string[] modifierIds)
+    {
+        if (string.IsNullOrWhiteSpace(baseSpellId))
+        {
+            Debug.LogWarning("Debug spell selector needs a base spell ID.");
+            return null;
+        }
+
+        if (!SpellsJsonDb.TryGet(baseSpellId, out JObject baseSpell) || baseSpell == null)
+        {
+            Debug.LogWarning($"Debug spell selector could not find base spell ID '{baseSpellId}'.");
+            return null;
+        }
+
+        if (baseSpell["projectile"] == null || baseSpell["damage"] == null)
+        {
+            Debug.LogWarning($"Debug spell selector base spell ID '{baseSpellId}' is not a valid base spell.");
+            return null;
+        }
+
+        List<JObject> modifiers = new List<JObject>();
+        if (modifierIds != null)
+        {
+            foreach (string modifierId in modifierIds)
+            {
+                if (string.IsNullOrWhiteSpace(modifierId))
+                {
+                    continue;
+                }
+
+                if (!SpellsJsonDb.TryGet(modifierId, out JObject modifierSpell) || modifierSpell == null)
+                {
+                    Debug.LogWarning($"Debug spell selector could not find modifier ID '{modifierId}'. Skipping it.");
+                    continue;
+                }
+
+                if (modifierSpell["projectile"] != null || modifierSpell["damage"] != null)
+                {
+                    Debug.LogWarning($"Debug spell selector ID '{modifierId}' is not a modifier. Skipping it.");
+                    continue;
+                }
+
+                modifiers.Add(modifierSpell);
+            }
+        }
+
+        return new GeneratedSpell(owner, baseSpell, modifiers);
+    }
+
     public Spell Build(SpellCaster owner)
     {
         List<JObject> baseSpells = SpellsJsonDb.All()

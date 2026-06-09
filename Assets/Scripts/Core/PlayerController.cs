@@ -30,6 +30,34 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxPitch = 80f;
     [SerializeField] private bool enableVerticalLook = true;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private enum DebugBaseSpell
+    {
+        ArcaneBolt,
+        MagicMissile,
+        ArcaneBlast,
+        ArcaneSpray
+    }
+
+    private enum DebugSpellModifier
+    {
+        None,
+        Splitter,
+        Nova,
+        Homing,
+        Chaos,
+        DamageAmp,
+        SpeedAmp,
+        Doubler
+    }
+
+    [Header("Temporary Debug Spell Selector")]
+    [SerializeField] private bool enableDebugSpellSelector;
+    [SerializeField] private bool clearSpellsBeforeDebugAdd;
+    [SerializeField] private DebugBaseSpell debugBaseSpell;
+    [SerializeField] private DebugSpellModifier debugModifier;
+#endif
+
     private float pitch;
     private Vector2 moveInput;
 
@@ -49,6 +77,10 @@ public class PlayerController : MonoBehaviour
 
         spellcaster = new SpellCaster(125, 8, Hittable.Team.PLAYER);
         StartCoroutine(spellcaster.ManaRegeneration());
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        AddDebugSpellForTesting();
+#endif
         
         hp = new Hittable(100, Hittable.Team.PLAYER, gameObject);
         hp.OnDeath += Die;
@@ -72,6 +104,127 @@ public class PlayerController : MonoBehaviour
         AddStartingRelicForTesting();
 #endif
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    // Temporary debug/testing code for quickly trying spell combinations during the FPS pivot.
+    private void AddDebugSpellForTesting()
+    {
+        if (enableDebugSpellSelector == false)
+        {
+            return;
+        }
+
+        if (spellcaster == null)
+        {
+            return;
+        }
+
+        string debugBaseSpellId = GetDebugBaseSpellId();
+        string[] debugModifierIds = GetDebugModifierIds();
+
+        Spell debugSpell = new SpellBuilder().BuildFromIds(spellcaster, debugBaseSpellId, debugModifierIds);
+        if (debugSpell == null)
+        {
+            Debug.LogWarning("Debug spell selector did not create a spell.");
+            return;
+        }
+
+        if (clearSpellsBeforeDebugAdd)
+        {
+            spellcaster.spells.Clear();
+        }
+
+        bool added = spellcaster.TryAddSpell(debugSpell);
+        if (!added)
+        {
+            Debug.LogWarning("Debug spell selector could not add the spell. SpellCaster.MAX_SPELLS may be full.");
+            return;
+        }
+
+        spelluiContainer?.Refresh();
+    }
+
+    private string GetDebugBaseSpellId()
+    {
+        if (debugBaseSpell == DebugBaseSpell.ArcaneBolt)
+        {
+            return "arcane_bolt";
+        }
+
+        if (debugBaseSpell == DebugBaseSpell.MagicMissile)
+        {
+            return "magic_missile";
+        }
+
+        if (debugBaseSpell == DebugBaseSpell.ArcaneBlast)
+        {
+            return "arcane_blast";
+        }
+
+        if (debugBaseSpell == DebugBaseSpell.ArcaneSpray)
+        {
+            return "arcane_spray";
+        }
+
+        return "arcane_bolt";
+    }
+
+    private string[] GetDebugModifierIds()
+    {
+        string modifierId = GetDebugModifierId();
+        if (string.IsNullOrWhiteSpace(modifierId))
+        {
+            return new string[0];
+        }
+
+        return new string[] { modifierId };
+    }
+
+    private string GetDebugModifierId()
+    {
+        if (debugModifier == DebugSpellModifier.None)
+        {
+            return "";
+        }
+
+        if (debugModifier == DebugSpellModifier.Splitter)
+        {
+            return "splitter";
+        }
+
+        if (debugModifier == DebugSpellModifier.Nova)
+        {
+            return "nova";
+        }
+
+        if (debugModifier == DebugSpellModifier.Homing)
+        {
+            return "homing";
+        }
+
+        if (debugModifier == DebugSpellModifier.Chaos)
+        {
+            return "chaos";
+        }
+
+        if (debugModifier == DebugSpellModifier.DamageAmp)
+        {
+            return "damage_amp";
+        }
+
+        if (debugModifier == DebugSpellModifier.SpeedAmp)
+        {
+            return "speed_amp";
+        }
+
+        if (debugModifier == DebugSpellModifier.Doubler)
+        {
+            return "doubler";
+        }
+
+        return "";
+    }
+#endif
 
     public void AddRelic(Relic relic)
     {
