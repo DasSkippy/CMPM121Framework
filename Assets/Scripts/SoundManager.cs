@@ -7,6 +7,7 @@ public class SoundManager : MonoBehaviour
 
     public AudioClip hit, music, shoot, enemyHit;
 
+    // Subscribe while active so gameplay events can trigger audio without direct object references.
     private void OnEnable()
     {
         EventBus.Instance.OnSpellCast += OnSpellCast;
@@ -21,6 +22,7 @@ public class SoundManager : MonoBehaviour
         EventBus.Instance.OnPlayerSpellHitEnemy -= OnPlayerSpellHitEnemy;
     }
 
+    // Background music uses its own source so one-shot sound effects do not interrupt it.
     public void Start()
     {
         if (musicSource == null || music == null)
@@ -62,6 +64,7 @@ public class SoundManager : MonoBehaviour
         sfxSource.PlayOneShot(enemyHit);
     }
 
+    // OnSpellCast only fires after mana and cooldown checks pass, so this is a real shot.
     private void OnSpellCast(SpellCaster caster, Spell spell)
     {
         if (caster != null && caster.team == Hittable.Team.PLAYER)
@@ -70,6 +73,7 @@ public class SoundManager : MonoBehaviour
         }
     }
 
+    // Damage events are shared by all teams, so only player targets get the player hit sound.
     private void OnDamage(Vector3 where, Damage damage, Hittable target)
     {
         if (target != null && target.team == Hittable.Team.PLAYER)
@@ -78,6 +82,7 @@ public class SoundManager : MonoBehaviour
         }
     }
 
+    // Enemy hit audio is separate from player damage audio for clearer combat feedback.
     private void OnPlayerSpellHitEnemy(Hittable enemy, Vector3 impact)
     {
         PlayEnemyHit();
