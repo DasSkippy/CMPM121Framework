@@ -5,18 +5,20 @@ public class SoundManager : MonoBehaviour
     public AudioSource musicSource;
     public AudioSource sfxSource;
 
-    public AudioClip hit, music, shoot;
+    public AudioClip hit, music, shoot, enemyHit;
 
     private void OnEnable()
     {
         EventBus.Instance.OnSpellCast += OnSpellCast;
         EventBus.Instance.OnDamage += OnDamage;
+        EventBus.Instance.OnPlayerSpellHitEnemy += OnPlayerSpellHitEnemy;
     }
 
     private void OnDisable()
     {
         EventBus.Instance.OnSpellCast -= OnSpellCast;
         EventBus.Instance.OnDamage -= OnDamage;
+        EventBus.Instance.OnPlayerSpellHitEnemy -= OnPlayerSpellHitEnemy;
     }
 
     public void Start()
@@ -50,6 +52,16 @@ public class SoundManager : MonoBehaviour
         sfxSource.PlayOneShot(shoot);
     }
 
+    public void PlayEnemyHit()
+    {
+        if (sfxSource == null || enemyHit == null)
+        {
+            return;
+        }
+
+        sfxSource.PlayOneShot(enemyHit);
+    }
+
     private void OnSpellCast(SpellCaster caster, Spell spell)
     {
         if (caster != null && caster.team == Hittable.Team.PLAYER)
@@ -64,5 +76,10 @@ public class SoundManager : MonoBehaviour
         {
             PlayHit();
         }
+    }
+
+    private void OnPlayerSpellHitEnemy(Hittable enemy, Vector3 impact)
+    {
+        PlayEnemyHit();
     }
 }

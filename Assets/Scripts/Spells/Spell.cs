@@ -61,6 +61,11 @@ public class Spell
     {
         if (other.team != team)
         {
+            if (team == Hittable.Team.PLAYER && other.team == Hittable.Team.MONSTERS)
+            {
+                EventBus.Instance.DoPlayerSpellHitEnemy(other, impact);
+            }
+
             other.Damage(new Damage(GetDamage(), Damage.Type.ARCANE));
         }
 

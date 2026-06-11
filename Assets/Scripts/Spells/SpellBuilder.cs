@@ -268,6 +268,11 @@ public class GeneratedSpell : Spell
             return;
         }
 
+        if (team == Hittable.Team.PLAYER && other.team == Hittable.Team.MONSTERS)
+        {
+            EventBus.Instance.DoPlayerSpellHitEnemy(other, impact);
+        }
+
         other.Damage(new Damage(GetDamage(spellPower), DamageType()));
 
         if (baseSpell["secondary_projectile"] is JObject secondaryProjectile)
@@ -286,6 +291,11 @@ public class GeneratedSpell : Spell
     {
         if (other.team != team)
         {
+            if (team == Hittable.Team.PLAYER && other.team == Hittable.Team.MONSTERS)
+            {
+                EventBus.Instance.DoPlayerSpellHitEnemy(other, impact);
+            }
+
             int damage = Mathf.Max(0, Mathf.RoundToInt(Float("secondary_damage", GetDamage(spellPower), spellPower)));
             other.Damage(new Damage(damage, DamageType()));
         }

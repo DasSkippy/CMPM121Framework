@@ -17,6 +17,7 @@ public class EventBus
     public event Action<Vector3, Damage, Hittable> OnDamage;
     public event Action<Relic> OnRelicPickup;
     public event Action<SpellCaster, Spell> OnSpellCast;
+    public event Action<Hittable, Vector3> OnPlayerSpellHitEnemy;
     public event Action<GameObject> OnEnemyKilled;
     public event Action<int> OnWaveComplete;
 
@@ -33,6 +34,11 @@ public class EventBus
     public void DoSpellCast(SpellCaster caster, Spell spell)
     {
         OnSpellCast?.Invoke(caster, spell);
+    }
+
+    public void DoPlayerSpellHitEnemy(Hittable enemy, Vector3 impact)
+    {
+        OnPlayerSpellHitEnemy?.Invoke(enemy, impact);
     }
 
     public void DoEnemyKilled(GameObject enemy)
