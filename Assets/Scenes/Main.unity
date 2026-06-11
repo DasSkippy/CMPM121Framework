@@ -5615,6 +5615,7 @@ MonoBehaviour:
   hit: {fileID: 8300000, guid: 192d78b78470d7040a1f370f69783c6e, type: 3}
   music: {fileID: 8300000, guid: 5b9b3a198f94c0a4b832fc2af150bfda, type: 3}
   shoot: {fileID: 8300000, guid: 04dd260b9525d36499af3c38dcd031b4, type: 3}
+  enemyHit: {fileID: 8300000, guid: 2d8152a686e05455c99b69a1ec6291f3, type: 3}
 --- !u!4 &1148679365
 Transform:
   m_ObjectHideFlags: 0
